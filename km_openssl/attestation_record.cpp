@@ -189,7 +189,6 @@ keymaster_error_t build_auth_list(const AuthorizationSet& auth_list, KM_AUTH_LIS
             break;
         case KM_TAG_MIN_MAC_LENGTH:
             integer_ptr = &record->min_mac_length;
-            break;
 
         /* Non-repeating long unsigned integers */
         case KM_TAG_RSA_PUBLIC_EXPONENT:
@@ -224,7 +223,7 @@ keymaster_error_t build_auth_list(const AuthorizationSet& auth_list, KM_AUTH_LIS
             bool_ptr = &record->allow_while_on_body;
             break;
         case KM_TAG_UNLOCKED_DEVICE_REQUIRED:
-            bool_ptr = &record->unlocked_device_required;
+            // TODO(67752510)
             break;
         case KM_TAG_CALLER_NONCE:
             bool_ptr = &record->caller_nonce;
@@ -620,13 +619,6 @@ keymaster_error_t extract_auth_list(const KM_AUTH_LIST* record, AuthorizationSet
                               record->application_id->length))
         return KM_ERROR_MEMORY_ALLOCATION_FAILED;
 
-    // Attestation application ID
-    if (record->attestation_application_id &&
-        !auth_list->push_back(TAG_ATTESTATION_APPLICATION_ID,
-                              record->attestation_application_id->data,
-                              record->attestation_application_id->length))
-        return KM_ERROR_MEMORY_ALLOCATION_FAILED;
-
     // Creation date time
     if (!get_ulong(record->creation_date_time, TAG_CREATION_DATETIME, auth_list))
         return KM_ERROR_MEMORY_ALLOCATION_FAILED;
@@ -746,35 +738,6 @@ keymaster_error_t parse_attestation_record(const uint8_t* asn1_key_desc, size_t 
         return error;
 
     return extract_auth_list(record->tee_enforced, tee_enforced);
-}
-
-keymaster_error_t parse_root_of_trust(const uint8_t* asn1_key_desc, size_t asn1_key_desc_len,
-                                      keymaster_blob_t* verified_boot_key,
-                                      keymaster_verified_boot_t* verified_boot_state,
-                                      bool* device_locked) {
-    const uint8_t* p = asn1_key_desc;
-    UniquePtr<KM_KEY_DESCRIPTION, KM_KEY_DESCRIPTION_Delete> record(
-        d2i_KM_KEY_DESCRIPTION(nullptr, &p, asn1_key_desc_len));
-    if (!record.get()) {
-        return TranslateLastOpenSslError();
-    }
-    if (!record->tee_enforced) {
-        return KM_ERROR_INVALID_ARGUMENT;
-    }
-    if (!record->tee_enforced->root_of_trust) {
-        return KM_ERROR_INVALID_ARGUMENT;
-    }
-    if (!record->tee_enforced->root_of_trust->verified_boot_key) {
-        return KM_ERROR_INVALID_ARGUMENT;
-    }
-    KM_ROOT_OF_TRUST* root_of_trust = record->tee_enforced->root_of_trust;
-    verified_boot_key->data = dup_buffer(root_of_trust->verified_boot_key->data,
-                                         root_of_trust->verified_boot_key->length);
-    verified_boot_key->data_length = root_of_trust->verified_boot_key->length;
-    *verified_boot_state = static_cast<keymaster_verified_boot_t>(
-        ASN1_ENUMERATED_get(root_of_trust->verified_boot_state));
-    *device_locked = root_of_trust->device_locked;
-    return KM_ERROR_OK;
 }
 
 }  // namespace keymaster

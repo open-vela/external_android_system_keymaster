@@ -223,7 +223,7 @@ keymaster_error_t build_auth_list(const AuthorizationSet& auth_list, KM_AUTH_LIS
             bool_ptr = &record->allow_while_on_body;
             break;
         case KM_TAG_UNLOCKED_DEVICE_REQUIRED:
-            // TODO(67752510)
+            bool_ptr = &record->unlocked_device_required;
             break;
         case KM_TAG_CALLER_NONCE:
             bool_ptr = &record->caller_nonce;

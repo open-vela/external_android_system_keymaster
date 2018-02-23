@@ -71,7 +71,6 @@ typedef struct km_auth_list {
     ASN1_INTEGER* user_auth_type;
     ASN1_INTEGER* auth_timeout;
     ASN1_NULL* allow_while_on_body;
-    ASN1_NULL* unlocked_device_required;
     ASN1_NULL* all_applications;
     ASN1_OCTET_STRING* application_id;
     ASN1_INTEGER* creation_date_time;
@@ -99,7 +98,8 @@ ASN1_SEQUENCE(KM_AUTH_LIST) = {
     ASN1_EXP_SET_OF_OPT(KM_AUTH_LIST, digest, ASN1_INTEGER, TAG_DIGEST.masked_tag()),
     ASN1_EXP_SET_OF_OPT(KM_AUTH_LIST, padding, ASN1_INTEGER, TAG_PADDING.masked_tag()),
     ASN1_EXP_OPT(KM_AUTH_LIST, caller_nonce, ASN1_NULL, TAG_CALLER_NONCE.masked_tag()),
-    ASN1_EXP_OPT(KM_AUTH_LIST, min_mac_length, ASN1_INTEGER, TAG_MIN_MAC_LENGTH.masked_tag()),
+    ASN1_EXP_SET_OF_OPT(KM_AUTH_LIST, min_mac_length, ASN1_INTEGER,
+                        TAG_MIN_MAC_LENGTH.masked_tag()),
     ASN1_EXP_SET_OF_OPT(KM_AUTH_LIST, kdf, ASN1_INTEGER, TAG_KDF.masked_tag()),
     ASN1_EXP_OPT(KM_AUTH_LIST, ec_curve, ASN1_INTEGER, TAG_EC_CURVE.masked_tag()),
     ASN1_EXP_OPT(KM_AUTH_LIST, rsa_public_exponent, ASN1_INTEGER,
@@ -114,8 +114,6 @@ ASN1_SEQUENCE(KM_AUTH_LIST) = {
     ASN1_EXP_OPT(KM_AUTH_LIST, auth_timeout, ASN1_INTEGER, TAG_AUTH_TIMEOUT.masked_tag()),
     ASN1_EXP_OPT(KM_AUTH_LIST, allow_while_on_body, ASN1_NULL,
                  TAG_ALLOW_WHILE_ON_BODY.masked_tag()),
-    ASN1_EXP_OPT(KM_AUTH_LIST, unlocked_device_required, ASN1_NULL,
-                 TAG_UNLOCKED_DEVICE_REQUIRED.masked_tag()),
     ASN1_EXP_OPT(KM_AUTH_LIST, all_applications, ASN1_NULL, TAG_ALL_APPLICATIONS.masked_tag()),
     ASN1_EXP_OPT(KM_AUTH_LIST, application_id, ASN1_OCTET_STRING, TAG_APPLICATION_ID.masked_tag()),
     ASN1_EXP_OPT(KM_AUTH_LIST, creation_date_time, ASN1_INTEGER,
@@ -170,10 +168,9 @@ ASN1_SEQUENCE(KM_KEY_DESCRIPTION) = {
 DECLARE_ASN1_FUNCTIONS(KM_KEY_DESCRIPTION);
 
 class AttestationRecordContext {
-  protected:
+protected:
     virtual ~AttestationRecordContext() {}
-
-  public:
+public:
     /**
      * Returns the security level (SW or TEE) of this keymaster implementation.
      */
@@ -190,9 +187,9 @@ class AttestationRecordContext {
      * If you do not support device ID attestation, ignore all arguments and return
      * KM_ERROR_UNIMPLEMENTED.
      */
-    virtual keymaster_error_t
-    VerifyAndCopyDeviceIds(const AuthorizationSet& /* attestation_params */,
-                           AuthorizationSet* /* attestation */) const {
+    virtual keymaster_error_t VerifyAndCopyDeviceIds(
+        const AuthorizationSet& /* attestation_params */,
+        AuthorizationSet* /* attestation */) const {
         return KM_ERROR_UNIMPLEMENTED;
     }
     /**
@@ -242,8 +239,7 @@ keymaster_error_t build_attestation_record(const AuthorizationSet& attestation_p
                                            size_t* asn1_key_desc_len);
 
 /**
- * Helper functions for attestation record tests. Caller takes ownership of
- * |attestation_challenge->data| and |unique_id->data|, deallocate using delete[].
+ * helper function for attestation record test.
  */
 keymaster_error_t parse_attestation_record(const uint8_t* asn1_key_desc, size_t asn1_key_desc_len,
                                            uint32_t* attestation_version,  //
@@ -254,14 +250,6 @@ keymaster_error_t parse_attestation_record(const uint8_t* asn1_key_desc, size_t 
                                            AuthorizationSet* software_enforced,
                                            AuthorizationSet* tee_enforced,
                                            keymaster_blob_t* unique_id);
-
-/**
- * Caller takes ownership of |verified_boot_key->data|, deallocate using delete[].
- */
-keymaster_error_t parse_root_of_trust(const uint8_t* asn1_key_desc, size_t asn1_key_desc_len,
-                                      keymaster_blob_t* verified_boot_key,
-                                      keymaster_verified_boot_t* verified_boot_state,
-                                      bool* device_locked);
 
 keymaster_error_t build_auth_list(const AuthorizationSet& auth_list, KM_AUTH_LIST* record);
 

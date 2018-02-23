@@ -44,7 +44,7 @@ keymaster_error_t TranslateLastOpenSslError(bool log_message) {
     unsigned long error = ERR_peek_last_error();
 
     if (log_message) {
-        LOG_D("%s", ERR_error_string(error, nullptr));
+        LOG_D("%s", ERR_error_string(error, NULL));
     }
 
     int reason = ERR_GET_REASON(error);

@@ -54,7 +54,7 @@ const keymaster_digest_t* EcdsaOperationFactory::SupportedDigests(size_t* digest
 }
 
 EcdsaOperation::~EcdsaOperation() {
-    if (ecdsa_key_ != nullptr)
+    if (ecdsa_key_ != NULL)
         EVP_PKEY_free(ecdsa_key_);
     EVP_MD_CTX_cleanup(&digest_ctx_);
 }

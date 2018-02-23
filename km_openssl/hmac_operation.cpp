@@ -74,7 +74,7 @@ OperationPtr HmacOperationFactory::CreateOperation(Key&& key, const Authorizatio
 
     if (*error != KM_ERROR_OK) return nullptr;
 
-    return move(op);
+    return op;
 }
 
 static keymaster_digest_t supported_digests[] = {KM_DIGEST_SHA1, KM_DIGEST_SHA_2_224,
@@ -132,7 +132,7 @@ HmacOperation::HmacOperation(Key&& key, keymaster_purpose_t purpose, keymaster_d
     }
 
     KeymasterKeyBlob blob = key.key_material_move();
-    HMAC_Init_ex(&ctx_, blob.key_material, blob.key_material_size, md, nullptr /* engine */);
+    HMAC_Init_ex(&ctx_, blob.key_material, blob.key_material_size, md, NULL /* engine */);
 }
 
 HmacOperation::~HmacOperation() {

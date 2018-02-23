@@ -36,7 +36,7 @@ const size_t STARTING_ELEMS_CAPACITY = 8;
 
 AuthorizationSet::AuthorizationSet(AuthorizationSetBuilder& builder) {
     elems_ = builder.set.elems_;
-    builder.set.elems_ = nullptr;
+    builder.set.elems_ = NULL;
 
     elems_size_ = builder.set.elems_size_;
     builder.set.elems_size_ = 0;
@@ -45,7 +45,7 @@ AuthorizationSet::AuthorizationSet(AuthorizationSetBuilder& builder) {
     builder.set.elems_capacity_ = 0;
 
     indirect_data_ = builder.set.indirect_data_;
-    builder.set.indirect_data_ = nullptr;
+    builder.set.indirect_data_ = NULL;
 
     indirect_data_capacity_ = builder.set.indirect_data_capacity_;
     builder.set.indirect_data_capacity_ = 0;
@@ -67,7 +67,7 @@ bool AuthorizationSet::reserve_elems(size_t count) {
 
     if (count > elems_capacity_) {
         keymaster_key_param_t* new_elems = new (std::nothrow) keymaster_key_param_t[count];
-        if (new_elems == nullptr) {
+        if (new_elems == NULL) {
             set_invalid(ALLOCATION_FAILURE);
             return false;
         }
@@ -85,7 +85,7 @@ bool AuthorizationSet::reserve_indirect(size_t length) {
 
     if (length > indirect_data_capacity_) {
         uint8_t* new_data = new (std::nothrow) uint8_t[length];
-        if (new_data == nullptr) {
+        if (new_data == NULL) {
             set_invalid(ALLOCATION_FAILURE);
             return false;
         }
@@ -123,7 +123,7 @@ void AuthorizationSet::MoveFrom(AuthorizationSet& set) {
 bool AuthorizationSet::Reinitialize(const keymaster_key_param_t* elems, const size_t count) {
     FreeData();
 
-    if (elems == nullptr || count == 0) {
+    if (elems == NULL || count == 0) {
         error_ = OK;
         return true;
     }
@@ -385,14 +385,9 @@ static bool deserialize(keymaster_key_param_t* param, const uint8_t** buf_ptr, c
         break;
     case KM_BOOL:
         if (*buf_ptr < end) {
-            uint8_t temp = **buf_ptr;
-            // Bools are converted to 0 or 1 when serialized so only accept
-            // one of these values when deserializing.
-            if (temp <= 1) {
-                param->boolean = static_cast<bool>(temp);
-                (*buf_ptr)++;
-                return true;
-            }
+            param->boolean = static_cast<bool>(**buf_ptr);
+            (*buf_ptr)++;
+            return true;
         }
         return false;
 
@@ -483,15 +478,6 @@ bool AuthorizationSet::DeserializeElementsData(const uint8_t** buf_ptr, const ui
             return false;
         }
     }
-
-    // Check if all the elements were consumed. If not, something was malformed as the
-    // retrieved elements_count and elements_size are not consistent with each other.
-    if (*buf_ptr != elements_end) {
-        LOG_E("Malformed data found in AuthorizationSet deserialization", 0);
-        set_invalid(MALFORMED_DATA);
-        return false;
-    }
-
     elems_size_ = elements_count;
     return true;
 }
@@ -524,8 +510,8 @@ void AuthorizationSet::FreeData() {
     delete[] elems_;
     delete[] indirect_data_;
 
-    elems_ = nullptr;
-    indirect_data_ = nullptr;
+    elems_ = NULL;
+    indirect_data_ = NULL;
     elems_capacity_ = 0;
     indirect_data_capacity_ = 0;
     error_ = OK;

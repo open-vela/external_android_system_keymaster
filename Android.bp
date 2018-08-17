@@ -228,7 +228,6 @@ cc_library {
         "liblog",
         "libcrypto",
         "libcutils",
-        "libbase",
     ],
 
     export_include_dirs: ["include"],

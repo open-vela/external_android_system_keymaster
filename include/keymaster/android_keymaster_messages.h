@@ -899,6 +899,7 @@ struct VerifyAuthorizationResponse : public KeymasterResponse {
         return copy_uint32_from_buf(buf_ptr, end, &error) && token.Deserialize(buf_ptr, end);
     }
 
+    keymaster_error_t error{KM_ERROR_UNKNOWN_ERROR};
     VerificationToken token;
 };
 

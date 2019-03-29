@@ -43,14 +43,12 @@ typedef struct km_root_of_trust {
     ASN1_OCTET_STRING* verified_boot_key;
     ASN1_BOOLEAN* device_locked;
     ASN1_ENUMERATED* verified_boot_state;
-    ASN1_OCTET_STRING* verified_boot_hash;
 } KM_ROOT_OF_TRUST;
 
 ASN1_SEQUENCE(KM_ROOT_OF_TRUST) = {
     ASN1_SIMPLE(KM_ROOT_OF_TRUST, verified_boot_key, ASN1_OCTET_STRING),
     ASN1_SIMPLE(KM_ROOT_OF_TRUST, device_locked, ASN1_BOOLEAN),
     ASN1_SIMPLE(KM_ROOT_OF_TRUST, verified_boot_state, ASN1_ENUMERATED),
-    ASN1_SIMPLE(KM_ROOT_OF_TRUST, verified_boot_hash, ASN1_OCTET_STRING),
 } ASN1_SEQUENCE_END(KM_ROOT_OF_TRUST);
 DECLARE_ASN1_FUNCTIONS(KM_ROOT_OF_TRUST);
 
@@ -73,7 +71,6 @@ typedef struct km_auth_list {
     ASN1_INTEGER* user_auth_type;
     ASN1_INTEGER* auth_timeout;
     ASN1_NULL* allow_while_on_body;
-    ASN1_NULL* trusted_confirmation_required;
     ASN1_NULL* unlocked_device_required;
     ASN1_NULL* all_applications;
     ASN1_OCTET_STRING* application_id;

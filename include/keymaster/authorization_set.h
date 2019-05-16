@@ -54,23 +54,18 @@ class AuthorizationSet : public Serializable, public keymaster_key_param_set_t {
      * return ALLOCATION_FAILURE. It is the responsibility of the caller to check before using the
      * set, if allocations might fail.
      */
-    AuthorizationSet(const keymaster_key_param_t* elems, size_t count)
-        : elems_capacity_(0), indirect_data_(nullptr), indirect_data_size_(0),
-          indirect_data_capacity_(0), error_(OK) {
+    AuthorizationSet(const keymaster_key_param_t* elems, size_t count) : indirect_data_(nullptr) {
         elems_ = nullptr;
         Reinitialize(elems, count);
     }
 
-    explicit AuthorizationSet(const keymaster_key_param_set_t& set)
-        : elems_capacity_(0), indirect_data_(nullptr), indirect_data_size_(0),
-          indirect_data_capacity_(0), error_(OK) {
+    explicit AuthorizationSet(const keymaster_key_param_set_t& set) : indirect_data_(nullptr) {
         elems_ = nullptr;
         Reinitialize(set.params, set.length);
     }
 
     explicit AuthorizationSet(const uint8_t* serialized_set, size_t serialized_size)
-        : elems_capacity_(0), indirect_data_(nullptr), indirect_data_size_(0),
-          indirect_data_capacity_(0), error_(OK) {
+        : indirect_data_(nullptr) {
         elems_ = nullptr;
         Deserialize(&serialized_set, serialized_set + serialized_size);
     }
@@ -82,9 +77,7 @@ class AuthorizationSet : public Serializable, public keymaster_key_param_set_t {
     explicit AuthorizationSet(/* NOT const */ AuthorizationSetBuilder& builder);
 
     // Copy constructor.
-    AuthorizationSet(const AuthorizationSet& set)
-        : Serializable(), elems_capacity_(0), indirect_data_(nullptr), indirect_data_size_(0),
-          indirect_data_capacity_(0), error_(OK) {
+    AuthorizationSet(const AuthorizationSet& set) : Serializable(), indirect_data_(nullptr) {
         elems_ = nullptr;
         error_ = set.error_;
         if (error_ != OK) return;

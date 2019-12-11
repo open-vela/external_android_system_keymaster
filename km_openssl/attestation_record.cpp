@@ -220,6 +220,9 @@ keymaster_error_t build_auth_list(const AuthorizationSet& auth_list, KM_AUTH_LIS
         case KM_TAG_ROLLBACK_RESISTANT:
             bool_ptr = &record->rollback_resistant;
             break;
+        case KM_TAG_ROLLBACK_RESISTANCE:
+            bool_ptr = &record->rollback_resistance;
+            break;
         case KM_TAG_ALLOW_WHILE_ON_BODY:
             bool_ptr = &record->allow_while_on_body;
             break;
@@ -392,16 +395,23 @@ keymaster_error_t build_attestation_record(const AuthorizationSet& attestation_p
             KM_AUTH_LIST* tee_record = key_desc->tee_enforced;
             tee_record->root_of_trust = KM_ROOT_OF_TRUST_new();
             keymaster_blob_t verified_boot_key;
+            keymaster_blob_t verified_boot_hash;
             keymaster_verified_boot_t verified_boot_state;
             bool device_locked;
             keymaster_error_t error = context.GetVerifiedBootParams(
-                &verified_boot_key, &verified_boot_state, &device_locked);
+                &verified_boot_key, &verified_boot_hash, &verified_boot_state,
+                &device_locked);
             if (error != KM_ERROR_OK)
                 return error;
             if (verified_boot_key.data_length &&
                 !ASN1_OCTET_STRING_set(tee_record->root_of_trust->verified_boot_key,
                                        verified_boot_key.data, verified_boot_key.data_length))
                 return TranslateLastOpenSslError();
+            if (verified_boot_hash.data_length &&
+                !ASN1_OCTET_STRING_set(tee_record->root_of_trust->verified_boot_hash,
+                                       verified_boot_hash.data, verified_boot_hash.data_length)) {
+                return TranslateLastOpenSslError();
+            }
             tee_record->root_of_trust->device_locked = (int*)device_locked;
             if (!ASN1_ENUMERATED_set(tee_record->root_of_trust->verified_boot_state,
                                      verified_boot_state))

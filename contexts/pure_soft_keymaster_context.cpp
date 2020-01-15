@@ -111,6 +111,10 @@ keymaster_error_t PureSoftKeymasterContext::CreateKeyBlob(const AuthorizationSet
                                                       KeymasterKeyBlob* blob,
                                                       AuthorizationSet* hw_enforced,
                                                       AuthorizationSet* sw_enforced) const {
+    if (key_description.GetTagValue(TAG_ROLLBACK_RESISTANCE)) {
+        return KM_ERROR_ROLLBACK_RESISTANCE_UNAVAILABLE;
+    }
+
     keymaster_error_t error = SetKeyBlobAuthorizations(key_description, origin, os_version_,
                                                        os_patchlevel_, hw_enforced, sw_enforced);
     if (error != KM_ERROR_OK)
@@ -404,6 +408,18 @@ keymaster_error_t PureSoftKeymasterContext::UnwrapKey(
     }
 
     return error;
+}
+
+keymaster_error_t PureSoftKeymasterContext::GetVerifiedBootParams(
+    keymaster_blob_t* verified_boot_key, keymaster_blob_t* verified_boot_hash,
+    keymaster_verified_boot_t* verified_boot_state, bool* device_locked) const {
+    // TODO(swillden): See if there might be some sort of vbmeta data in goldfish/cuttlefish.
+    static std::string fake_vb_key = "12345678901234567890123456789012";
+    *verified_boot_key = {reinterpret_cast<uint8_t*>(fake_vb_key.data()), fake_vb_key.size()};
+    *verified_boot_hash = {reinterpret_cast<uint8_t*>(fake_vb_key.data()), fake_vb_key.size()};
+    *verified_boot_state = KM_VERIFIED_BOOT_UNVERIFIED;
+    *device_locked = false;
+    return KM_ERROR_OK;
 }
 
 }  // namespace keymaster

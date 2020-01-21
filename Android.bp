@@ -14,30 +14,9 @@
 
 // libkeymaster_messages contains just the code necessary to communicate with a
 // AndroidKeymaster implementation, e.g. one running in TrustZone.
-cc_defaults {
-    name: "keymaster_defaults",
-    vendor_available: true,
-    cflags: [
-        "-Wall",
-        "-Werror",
-        "-Wunused",
-    ],
-    clang: true,
-    clang_cflags: [
-        "-Wno-error=unused-const-variable",
-        "-Wno-error=unused-private-field",
-        "-Wimplicit-fallthrough",
-        // TODO(krasin): reenable coverage flags, when the new Clang toolchain is released.
-        // Currently, if enabled, these flags will cause an internal error in Clang.
-        "-fno-sanitize-coverage=edge,indirect-calls,8bit-counters,trace-cmp"
-    ],
-    sanitize: {
-        integer_overflow: false,
-    },
-}
-
 cc_library_shared {
     name: "libkeymaster_messages",
+    vendor_available: true,
     vndk: {
         enabled: true,
     },
@@ -51,12 +30,25 @@ cc_library_shared {
         "android_keymaster/keymaster_stl.cpp",
     ],
     header_libs: ["libhardware_headers"],
-    defaults: ["keymaster_defaults" ],
-    clang_cflags: [
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wunused",
         "-DKEYMASTER_NAME_TAGS",
     ],
     stl: "none",
+    clang: true,
+    clang_cflags: [
+        "-Wimplicit-fallthrough",
+        // TODO(krasin): reenable coverage flags, when the new Clang toolchain is released.
+        // Currently, if enabled, these flags will cause an internal error in Clang.
+        "-fno-sanitize-coverage=edge,indirect-calls,8bit-counters,trace-cmp"
+    ],
+
     export_include_dirs: ["include"],
+    sanitize: {
+        integer_overflow: false,
+    },
 }
 
 // libkeymaster_portable contains almost everything needed for a keymaster
@@ -65,6 +57,7 @@ cc_library_shared {
 // the function-based keymaster HAL API to the message-based AndroidKeymaster API.
 cc_library {
     name: "libkeymaster_portable",
+    vendor_available: true,
     vndk: {
         enabled: true,
     },
@@ -121,8 +114,10 @@ cc_library {
     ],
     header_libs: ["libhardware_headers"],
     export_header_lib_headers: ["libhardware_headers"],
-    defaults: ["keymaster_defaults" ],
     cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wunused",
         "-DBORINGSSL_NO_CXX",
     ],
     // NOTE: libkeymaster_portable must run unchanged in the trusty runtime environment.
@@ -130,7 +125,20 @@ cc_library {
     // weakly defines the subset of stl symbols required for this library to work
     // and which are also available in the trusty context.
     stl: "none",
+    clang: true,
+    clang_cflags: [
+        "-Wno-error=unused-const-variable",
+        "-Wno-error=unused-private-field",
+        "-Wimplicit-fallthrough",
+        // TODO(krasin): reenable coverage flags, when the new Clang toolchain is released.
+        // Currently, if enabled, these flags will cause an internal error in Clang.
+        "-fno-sanitize-coverage=edge,indirect-calls,8bit-counters,trace-cmp"
+    ],
+
     export_include_dirs: ["include"],
+    sanitize: {
+        integer_overflow: false,
+    },
 }
 
 // libsoftkeymaster provides a software-based keymaster HAL implementation.
@@ -138,6 +146,7 @@ cc_library {
 // not support the request.
 cc_library {
     name: "libsoftkeymasterdevice",
+    vendor_available: true,
     vndk: {
         enabled: true,
     },
@@ -159,7 +168,20 @@ cc_library {
         "km_openssl/soft_keymaster_enforcement.cpp",
         "contexts/soft_keymaster_logger.cpp",
     ],
-    defaults: ["keymaster_defaults"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wunused",
+    ],
+    clang: true,
+    clang_cflags: [
+        "-Wno-error=unused-const-variable",
+        "-Wno-error=unused-private-field",
+        // TODO(krasin): reenable coverage flags, when the new Clang toolchain is released.
+        // Currently, if enabled, these flags will cause an internal error in Clang.
+        "-fno-sanitize-coverage=edge,indirect-calls,8bit-counters,trace-cmp"
+    ],
+
     shared_libs: [
         "libkeymaster_messages",
         "libkeymaster_portable",
@@ -168,11 +190,13 @@ cc_library {
         "libcrypto",
         "libcutils",
     ],
+
     export_include_dirs: ["include"],
 }
 
 cc_library {
     name: "libpuresoftkeymasterdevice",
+    vendor_available: true,
     vndk: {
         enabled: true,
     },
@@ -183,7 +207,20 @@ cc_library {
         "contexts/soft_keymaster_logger.cpp",
         "km_openssl/soft_keymaster_enforcement.cpp",
     ],
-    defaults: ["keymaster_defaults"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wunused",
+    ],
+    clang: true,
+    clang_cflags: [
+        "-Wno-error=unused-const-variable",
+        "-Wno-error=unused-private-field",
+        // TODO(krasin): reenable coverage flags, when the new Clang toolchain is released.
+        // Currently, if enabled, these flags will cause an internal error in Clang.
+        "-fno-sanitize-coverage=edge,indirect-calls,8bit-counters,trace-cmp"
+    ],
+
     shared_libs: [
         "libkeymaster_messages",
         "libkeymaster_portable",
@@ -198,6 +235,7 @@ cc_library {
 
 cc_library_shared {
     name: "libkeymaster3device",
+    vendor: true,
     srcs: [
         "legacy_support/keymaster_passthrough_key.cpp",
         "legacy_support/keymaster_passthrough_engine.cpp",
@@ -216,7 +254,20 @@ cc_library_shared {
         "legacy_support/rsa_keymaster1_key.cpp",
         "legacy_support/rsa_keymaster1_operation.cpp",
     ],
-    defaults: ["keymaster_defaults"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wunused",
+    ],
+    clang: true,
+    clang_cflags: [
+        "-Wno-error=unused-const-variable",
+        "-Wno-error=unused-private-field",
+        // TODO(krasin): reenable coverage flags, when the new Clang toolchain is released.
+        // Currently, if enabled, these flags will cause an internal error in Clang.
+        "-fno-sanitize-coverage=edge,indirect-calls,8bit-counters,trace-cmp"
+    ],
+
     shared_libs: [
         "libkeymaster_messages",
         "android.hardware.keymaster@3.0",
@@ -229,11 +280,13 @@ cc_library_shared {
         "liblog",
         "libutils",
     ],
+
     export_include_dirs: ["include", "ng/include"],
 }
 
 cc_library_shared {
     name: "libkeymaster4",
+    vendor_available: true,
     srcs: [
         "legacy_support/keymaster_passthrough_key.cpp",
         "legacy_support/keymaster_passthrough_engine.cpp",
@@ -241,7 +294,20 @@ cc_library_shared {
         "ng/AndroidKeymaster4Device.cpp",
         "android_keymaster/keymaster_configuration.cpp",
     ],
-    defaults: ["keymaster_defaults"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wunused",
+    ],
+    clang: true,
+    clang_cflags: [
+        "-Wno-error=unused-const-variable",
+        "-Wno-error=unused-private-field",
+        // TODO(krasin): reenable coverage flags, when the new Clang toolchain is released.
+        // Currently, if enabled, these flags will cause an internal error in Clang.
+        "-fno-sanitize-coverage=edge,indirect-calls,8bit-counters,trace-cmp"
+    ],
+
     shared_libs: [
         "libkeymaster_messages",
         "android.hardware.keymaster@4.0",
@@ -255,6 +321,7 @@ cc_library_shared {
         "libutils",
         "libkeymaster4support",
     ],
+
     export_include_dirs: ["ng/include"],
 }
 
@@ -262,25 +329,43 @@ cc_library_shared {
     name: "libkeymaster41",
     vendor_available: true,
     srcs: [
+        "legacy_support/keymaster_passthrough_key.cpp",
+        "legacy_support/keymaster_passthrough_engine.cpp",
+        "legacy_support/keymaster_passthrough_operation.cpp",
         "ng/AndroidKeymaster41Device.cpp",
+        "ng/AndroidKeymaster4Device.cpp",
+        "android_keymaster/keymaster_configuration.cpp",
     ],
-    defaults: ["keymaster_defaults"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wunused",
+    ],
+    clang: true,
+    clang_cflags: [
+        "-Wno-error=unused-const-variable",
+        "-Wno-error=unused-private-field",
+        // TODO(krasin): reenable coverage flags, when the new Clang toolchain is released.
+        // Currently, if enabled, these flags will cause an internal error in Clang.
+        "-fno-sanitize-coverage=edge,indirect-calls,8bit-counters,trace-cmp"
+    ],
+
     shared_libs: [
-        "android.hardware.keymaster@4.0",
         "android.hardware.keymaster@4.1",
+        "android.hardware.keymaster@4.0",
         "libbase",
         "libcrypto",
         "libcutils",
         "libhidlbase",
-        "libkeymaster4",
-        "libkeymaster4_1support",
         "libkeymaster4support",
+        "libkeymaster4_1support",
         "libkeymaster_messages",
         "libkeymaster_portable",
         "liblog",
         "libpuresoftkeymasterdevice",
         "libutils",
     ],
+
     export_include_dirs: ["ng/include"],
 }
 

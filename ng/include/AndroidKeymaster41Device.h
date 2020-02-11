@@ -68,8 +68,14 @@ class AndroidKeymaster41Device : public IKeymasterDevice, public V4_0::ng::Andro
     virtual ~AndroidKeymaster41Device() {}
 
     Return<V41ErrorCode> deviceLocked(bool /* passwordOnly */,
-                                      const VerificationToken& /* verificationToken */) override;
-    Return<V41ErrorCode> earlyBootEnded() override;
+                                      const VerificationToken& /* verificationToken */) override {
+        // TODO(swillden): Add feature to AndroidKeymaster and call from here.
+        return convert(ErrorCode::UNIMPLEMENTED);
+    }
+    Return<V41ErrorCode> earlyBootEnded() override {
+        // TODO(swillden): Add feature to AndroidKeymaster and call from here.
+        return convert(ErrorCode::UNIMPLEMENTED);
+    }
 
     Return<void> beginOp(KeyPurpose purpose, const hidl_vec<uint8_t>& key,
                          const hidl_vec<KeyParameter>& inParams, const HardwareAuthToken& authToken,

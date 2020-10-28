@@ -15,18 +15,22 @@
 ** limitations under the License.
 */
 
-#pragma once
+#ifndef KM_OPENSSL_SOFTWARE_RANDOM_SOURCE_H_
+#define KM_OPENSSL_SOFTWARE_RANDOM_SOURCE_H_
 
 #include <keymaster/random_source.h>
 
 namespace keymaster {
 
 class SoftwareRandomSource : public RandomSource {
-  public:
+public:
     /**
      * Generates \p length random bytes, placing them in \p buf.
      */
     keymaster_error_t GenerateRandom(uint8_t* buffer, size_t length) const override;
+
 };
 
-}  // namespace keymaster
+}
+
+#endif  // KM_OPENSSL_SOFTWARE_RANDOM_SOURCE_H_

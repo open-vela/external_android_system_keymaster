@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef SYSTEM_KEYMASTER_RSA_KEYMASTER1_KEY_H_
+#define SYSTEM_KEYMASTER_RSA_KEYMASTER1_KEY_H_
 
 #include <openssl/rsa.h>
 
@@ -38,7 +39,8 @@ namespace keymaster {
  */
 class RsaKeymaster1KeyFactory : public RsaKeyFactory {
   public:
-    RsaKeymaster1KeyFactory(const SoftwareKeyBlobMaker* blob_maker, const Keymaster1Engine* engine);
+    RsaKeymaster1KeyFactory(const SoftwareKeyBlobMaker* blob_maker,
+                            const Keymaster1Engine* engine);
 
     keymaster_error_t GenerateKey(const AuthorizationSet& key_description,
                                   KeymasterKeyBlob* key_blob, AuthorizationSet* hw_enforced,
@@ -52,7 +54,8 @@ class RsaKeymaster1KeyFactory : public RsaKeyFactory {
 
     keymaster_error_t LoadKey(KeymasterKeyBlob&& key_material,
                               const AuthorizationSet& additional_params,
-                              AuthorizationSet&& hw_enforced, AuthorizationSet&& sw_enforced,
+                              AuthorizationSet&& hw_enforced,
+                              AuthorizationSet&& sw_enforced,
                               UniquePtr<Key>* key) const override;
 
     OperationFactory* GetOperationFactory(keymaster_purpose_t purpose) const override;
@@ -68,9 +71,12 @@ class RsaKeymaster1KeyFactory : public RsaKeyFactory {
 
 class RsaKeymaster1Key : public RsaKey {
   public:
-    RsaKeymaster1Key(RSA* rsa_key, AuthorizationSet&& hw_enforced, AuthorizationSet&& sw_enforced,
+    RsaKeymaster1Key(RSA* rsa_key, AuthorizationSet&& hw_enforced,
+                     AuthorizationSet&& sw_enforced,
                      const KeyFactory* key_factory)
         : RsaKey(rsa_key, move(hw_enforced), move(sw_enforced), key_factory) {}
 };
 
 }  // namespace keymaster
+
+#endif  // SYSTEM_KEYMASTER_RSA_KEYMASTER1_KEY_H_

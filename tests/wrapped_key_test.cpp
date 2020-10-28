@@ -66,6 +66,7 @@ string keyblob2string(keymaster_key_blob_t& blob) {
 TEST(WrappedKeyTest, Simple) {
 
     KeymasterKeyBlob asn1;
+    size_t asn1_len;
 
     KeymasterBlob iv = {reinterpret_cast<const uint8_t*>(test_iv.c_str()), test_iv.size()};
     KeymasterKeyBlob tk = {reinterpret_cast<const uint8_t*>(test_transit_key.c_str()),

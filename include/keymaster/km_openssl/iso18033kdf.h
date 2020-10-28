@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef SYSTEM_KEYMASTER_ISO18033KDF_H_
+#define SYSTEM_KEYMASTER_ISO18033KDF_H_
 
 #include <keymaster/km_openssl/kdf.h>
 
 #include <hardware/keymaster_defs.h>
 
-#include <keymaster/UniquePtr.h>
 #include <keymaster/serializable.h>
+#include <keymaster/UniquePtr.h>
 
 namespace keymaster {
 
@@ -62,3 +63,5 @@ class Iso18033Kdf : public Kdf {
 };
 
 }  // namespace keymaster
+
+#endif  // SYSTEM_KEYMASTER_ISO18033KDF_H_

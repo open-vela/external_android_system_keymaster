@@ -106,7 +106,8 @@ inline hidl_vec<uint8_t> kmBuffer2hidlVec(const ::keymaster::Buffer& buf) {
 inline static hidl_vec<hidl_vec<uint8_t>>
 kmCertChain2Hidl(const keymaster_cert_chain_t& cert_chain) {
     hidl_vec<hidl_vec<uint8_t>> result;
-    if (!cert_chain.entry_count || !cert_chain.entries) return result;
+    if (!cert_chain.entry_count || !cert_chain.entries)
+        return result;
 
     result.resize(cert_chain.entry_count);
     for (size_t i = 0; i < cert_chain.entry_count; ++i) {
@@ -118,7 +119,8 @@ kmCertChain2Hidl(const keymaster_cert_chain_t& cert_chain) {
 
 static inline hidl_vec<KeyParameter> kmParamSet2Hidl(const keymaster_key_param_set_t& set) {
     hidl_vec<KeyParameter> result;
-    if (set.length == 0 || set.params == nullptr) return result;
+    if (set.length == 0 || set.params == nullptr)
+        return result;
 
     result.resize(set.length);
     keymaster_key_param_t* params = set.params;
@@ -218,11 +220,11 @@ keymaster_key_param_set_t hidlKeyParams2Km(const hidl_vec<KeyParameter>& keyPara
     return set;
 }
 
-AndroidKeymaster4Device::AndroidKeymaster4Device(KmVersion version, SecurityLevel securityLevel)
+AndroidKeymaster4Device::AndroidKeymaster4Device(SecurityLevel securityLevel)
     : impl_(new ::keymaster::AndroidKeymaster(
           [&]() -> auto {
               auto context = new PureSoftKeymasterContext(
-                  version, static_cast<keymaster_security_level_t>(securityLevel));
+                  static_cast<keymaster_security_level_t>(securityLevel));
               context->SetSystemVersion(GetOsVersion(), GetOsPatchlevel());
               return context;
           }(),
@@ -232,7 +234,8 @@ AndroidKeymaster4Device::AndroidKeymaster4Device(KmVersion version, SecurityLeve
 AndroidKeymaster4Device::~AndroidKeymaster4Device() {}
 
 Return<void> AndroidKeymaster4Device::getHardwareInfo(getHardwareInfo_cb _hidl_cb) {
-    _hidl_cb(securityLevel_, "SoftwareKeymasterDevice", "Google");
+    _hidl_cb(securityLevel_,
+             "SoftwareKeymasterDevice", "Google");
     return Void();
 }
 
@@ -303,7 +306,8 @@ Return<void> AndroidKeymaster4Device::verifyAuthorization(
 }
 
 Return<ErrorCode> AndroidKeymaster4Device::addRngEntropy(const hidl_vec<uint8_t>& data) {
-    if (data.size() == 0) return ErrorCode::OK;
+    if (data.size() == 0)
+        return ErrorCode::OK;
     AddEntropyRequest request;
     request.random_data.Reinitialize(data.data(), data.size());
 

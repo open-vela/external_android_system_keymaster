@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef SYSTEM_KEYMASTER_PURE_SOFT_KEYMASTER_CONTEXT_H_
+#define SYSTEM_KEYMASTER_PURE_SOFT_KEYMASTER_CONTEXT_H_
+
 
 #include <memory>
 #include <string>
 
-#include <keymaster/attestation_record.h>
 #include <keymaster/keymaster_context.h>
-#include <keymaster/km_openssl/soft_keymaster_enforcement.h>
+#include <keymaster/attestation_record.h>
 #include <keymaster/km_openssl/software_random_source.h>
-#include <keymaster/random_source.h>
+#include <keymaster/km_openssl/soft_keymaster_enforcement.h>
 #include <keymaster/soft_key_factory.h>
+#include <keymaster/random_source.h>
 
 namespace keymaster {
 
@@ -42,11 +44,9 @@ class PureSoftKeymasterContext : public KeymasterContext,
                                  SoftwareRandomSource {
   public:
     // Security level must only be used for testing.
-    PureSoftKeymasterContext(
-        KmVersion version, keymaster_security_level_t security_level = KM_SECURITY_LEVEL_SOFTWARE);
+    explicit PureSoftKeymasterContext(
+        keymaster_security_level_t security_level = KM_SECURITY_LEVEL_SOFTWARE);
     ~PureSoftKeymasterContext() override;
-
-    KmVersion GetKmVersion() const override { return AttestationRecordContext::GetKmVersion(); }
 
     /*********************************************************************************************
      * Implement KeymasterContext
@@ -68,8 +68,10 @@ class PureSoftKeymasterContext : public KeymasterContext,
     keymaster_error_t DeleteAllKeys() const override;
     keymaster_error_t AddRngEntropy(const uint8_t* buf, size_t length) const override;
 
-    CertificateChain GenerateAttestation(const Key& key, const AuthorizationSet& attest_params,
-                                         keymaster_error_t* error) const override;
+    keymaster_error_t GenerateAttestation(const Key& key,
+                                          const AuthorizationSet& attest_params,
+                                          CertChainPtr* cert_chain) const override;
+
 
     KeymasterEnforcement* enforcement_policy() override {
         // SoftKeymaster does no enforcement; it's all done by Keystore.
@@ -110,7 +112,9 @@ class PureSoftKeymasterContext : public KeymasterContext,
     uint32_t os_version_;
     uint32_t os_patchlevel_;
     SoftKeymasterEnforcement soft_keymaster_enforcement_;
-    const keymaster_security_level_t security_level_;
+    keymaster_security_level_t security_level_;
 };
 
 }  // namespace keymaster
+
+#endif  // SYSTEM_KEYMASTER_PURE_SOFT_KEYMASTER_CONTEXT_H_

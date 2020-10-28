@@ -27,9 +27,9 @@
 namespace keymaster {
 namespace test {
 
-class EnforcementTestKeymasterEnforcement : public SoftKeymasterEnforcement {
+class TestKeymasterEnforcement : public SoftKeymasterEnforcement {
   public:
-    EnforcementTestKeymasterEnforcement()
+    TestKeymasterEnforcement()
         : SoftKeymasterEnforcement(3, 3), current_time_(10000), report_token_valid_(true) {}
 
     keymaster_error_t AuthorizeOperation(const keymaster_purpose_t purpose, const km_id_t keyid,
@@ -82,7 +82,7 @@ class KeymasterBaseTest : public ::testing::Test {
     }
     virtual ~KeymasterBaseTest() {}
 
-    EnforcementTestKeymasterEnforcement kmen;
+    TestKeymasterEnforcement kmen;
 
     tm past_tm;
     tm* future_tm;
@@ -107,10 +107,8 @@ TEST_F(KeymasterBaseTest, TestValidKeyPeriodNoTags) {
 
 TEST_F(KeymasterBaseTest, TestInvalidActiveTime) {
     keymaster_key_param_t params[] = {
-        Authorization(TAG_ALGORITHM, KM_ALGORITHM_RSA),
-        Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
-        Authorization(TAG_NO_AUTH_REQUIRED),
-        Authorization(TAG_ACTIVE_DATETIME, future_time),
+        Authorization(TAG_ALGORITHM, KM_ALGORITHM_RSA), Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
+        Authorization(TAG_NO_AUTH_REQUIRED), Authorization(TAG_ACTIVE_DATETIME, future_time),
     };
 
     AuthorizationSet auth_set(params, array_length(params));
@@ -125,8 +123,7 @@ TEST_F(KeymasterBaseTest, TestInvalidActiveTime) {
 
 TEST_F(KeymasterBaseTest, TestValidActiveTime) {
     keymaster_key_param_t params[] = {
-        Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
-        Authorization(TAG_ACTIVE_DATETIME, past_time),
+        Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN), Authorization(TAG_ACTIVE_DATETIME, past_time),
     };
 
     AuthorizationSet auth_set(params, array_length(params));
@@ -138,8 +135,7 @@ TEST_F(KeymasterBaseTest, TestValidActiveTime) {
 
 TEST_F(KeymasterBaseTest, TestInvalidOriginationExpireTime) {
     keymaster_key_param_t params[] = {
-        Authorization(TAG_ALGORITHM, KM_ALGORITHM_RSA),
-        Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
+        Authorization(TAG_ALGORITHM, KM_ALGORITHM_RSA), Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
         Authorization(TAG_ORIGINATION_EXPIRE_DATETIME, past_time),
     };
 
@@ -252,8 +248,7 @@ TEST_F(KeymasterBaseTest, TestValidSingleUseAccesses) {
 
 TEST_F(KeymasterBaseTest, TestInvalidMaxOps) {
     keymaster_key_param_t params[] = {
-        Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
-        Authorization(TAG_ALGORITHM, KM_ALGORITHM_RSA),
+        Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN), Authorization(TAG_ALGORITHM, KM_ALGORITHM_RSA),
         Authorization(TAG_MAX_USES_PER_BOOT, 4),
     };
 
@@ -276,8 +271,7 @@ TEST_F(KeymasterBaseTest, TestInvalidMaxOps) {
 
 TEST_F(KeymasterBaseTest, TestOverFlowMaxOpsTable) {
     keymaster_key_param_t params[] = {
-        Authorization(TAG_ALGORITHM, KM_ALGORITHM_RSA),
-        Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
+        Authorization(TAG_ALGORITHM, KM_ALGORITHM_RSA), Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
         Authorization(TAG_MAX_USES_PER_BOOT, 2),
     };
 
@@ -317,8 +311,7 @@ TEST_F(KeymasterBaseTest, TestOverFlowMaxOpsTable) {
 
 TEST_F(KeymasterBaseTest, TestInvalidTimeBetweenOps) {
     keymaster_key_param_t params[] = {
-        Authorization(TAG_ALGORITHM, KM_ALGORITHM_RSA),
-        Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
+        Authorization(TAG_ALGORITHM, KM_ALGORITHM_RSA), Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
         Authorization(TAG_MIN_SECONDS_BETWEEN_OPS, 10),
     };
 
@@ -341,8 +334,7 @@ TEST_F(KeymasterBaseTest, TestInvalidTimeBetweenOps) {
 
 TEST_F(KeymasterBaseTest, TestValidTimeBetweenOps) {
     keymaster_key_param_t params[] = {
-        Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
-        Authorization(TAG_PURPOSE, KM_PURPOSE_VERIFY),
+        Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN), Authorization(TAG_PURPOSE, KM_PURPOSE_VERIFY),
         Authorization(TAG_MIN_SECONDS_BETWEEN_OPS, 2),
     };
 
@@ -463,8 +455,7 @@ TEST_F(KeymasterBaseTest, TestOptTimeoutTableOverflow) {
 TEST_F(KeymasterBaseTest, TestPubkeyOptTimeoutTableOverflow) {
     keymaster_key_param_t params[] = {
         Authorization(TAG_ALGORITHM, KM_ALGORITHM_RSA),
-        Authorization(TAG_MIN_SECONDS_BETWEEN_OPS, 4),
-        Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
+        Authorization(TAG_MIN_SECONDS_BETWEEN_OPS, 4), Authorization(TAG_PURPOSE, KM_PURPOSE_SIGN),
     };
 
     AuthorizationSet auth_set(params, array_length(params));

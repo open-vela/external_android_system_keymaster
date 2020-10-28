@@ -38,9 +38,7 @@ class Keymaster1PassthroughContext : public KeymasterContext,
                                      public SoftwareRandomSource,
                                      public SoftwareKeyBlobMaker {
   public:
-    Keymaster1PassthroughContext(KmVersion version, keymaster1_device_t* dev);
-
-    KmVersion GetKmVersion() const override { return AttestationRecordContext::GetKmVersion(); }
+    explicit Keymaster1PassthroughContext(keymaster1_device_t* dev);
 
     /**
      * Sets the system version as reported by the system *itself*.  This is used to verify that the
@@ -108,8 +106,8 @@ class Keymaster1PassthroughContext : public KeymasterContext,
      */
     KeymasterEnforcement* enforcement_policy() override;
 
-    CertificateChain GenerateAttestation(const Key& key, const AuthorizationSet& attest_params,
-                                         keymaster_error_t* error) const override;
+    keymaster_error_t GenerateAttestation(const Key& key, const AuthorizationSet& attest_params,
+                                          CertChainPtr* cert_chain) const override;
 
     keymaster_error_t CreateKeyBlob(const AuthorizationSet& key_description,
                                     const keymaster_key_origin_t origin,

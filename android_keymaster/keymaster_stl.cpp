@@ -20,23 +20,25 @@
 
 namespace std {
 struct nothrow_t {};
-}  // namespace std
+}
 
 extern const std::nothrow_t __attribute__((weak)) std::nothrow = {};
 
-void* __attribute__((weak)) operator new(size_t __sz, const std::nothrow_t&) _NOEXCEPT {
+void* __attribute__((weak)) operator new(size_t __sz, const std::nothrow_t&) {
     return malloc(__sz);
 }
-void* __attribute__((weak)) operator new[](size_t __sz, const std::nothrow_t&) _NOEXCEPT {
+void* __attribute__((weak)) operator new[](size_t __sz, const std::nothrow_t&) {
     return malloc(__sz);
 }
 
 void __attribute__((weak)) operator delete(void* ptr) {
-    if (ptr) free(ptr);
+    if (ptr)
+        free(ptr);
 }
 
 void __attribute__((weak)) operator delete[](void* ptr) {
-    if (ptr) free(ptr);
+    if (ptr)
+        free(ptr);
 }
 
 extern "C" {

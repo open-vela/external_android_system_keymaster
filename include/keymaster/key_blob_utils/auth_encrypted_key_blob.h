@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef SYSTEM_KEYMASTER_AUTH_ENCRYPTED_KEY_BLOB_H_
+#define SYSTEM_KEYMASTER_AUTH_ENCRYPTED_KEY_BLOB_H_
 
 #include <hardware/keymaster_defs.h>
 
@@ -22,7 +23,7 @@ namespace keymaster {
 
 class AuthorizationSet;
 class Buffer;
-template <typename BlobType> struct TKeymasterBlob;
+template<typename BlobType> struct TKeymasterBlob;
 typedef TKeymasterBlob<keymaster_key_blob_t> KeymasterKeyBlob;
 
 keymaster_error_t SerializeAuthEncryptedBlob(const KeymasterKeyBlob& encrypted_key_material,
@@ -38,3 +39,5 @@ keymaster_error_t DeserializeAuthEncryptedBlob(const KeymasterKeyBlob& key_blob,
                                                Buffer* tag);
 
 }  // namespace keymaster
+
+#endif  // SYSTEM_KEYMASTER_AUTH_ENCRYPTED_KEY_BLOB_H_

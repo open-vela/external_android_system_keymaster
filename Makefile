@@ -31,6 +31,7 @@ SUBS=system/core \
 GTEST=$(BASE)/external/googletest/googletest
 
 INCLUDES=$(foreach dir,$(SUBS),-I $(BASE)/$(dir)/include) \
+	-I $(BASE)/libnativehelper/include/nativehelper \
 	-I $(GTEST)/include -isystem $(GTEST) -Iinclude -I$(BASE)/../boringssl/include
 
 ifdef FORCE_32_BIT

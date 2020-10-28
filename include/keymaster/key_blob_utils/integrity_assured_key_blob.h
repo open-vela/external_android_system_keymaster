@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef SYSTEM_KEYMASTER_INTEGRITY_ASSURED_KEY_BLOB_
+#define SYSTEM_KEYMASTER_INTEGRITY_ASSURED_KEY_BLOB_
 
 #include <hardware/keymaster_defs.h>
 
@@ -22,7 +23,7 @@ namespace keymaster {
 
 class AuthorizationSet;
 class Buffer;
-template <typename BlobType> struct TKeymasterBlob;
+template<typename BlobType> struct TKeymasterBlob;
 typedef TKeymasterBlob<keymaster_key_blob_t> KeymasterKeyBlob;
 
 keymaster_error_t SerializeIntegrityAssuredBlob(const KeymasterKeyBlob& key_material,
@@ -42,4 +43,6 @@ keymaster_error_t DeserializeIntegrityAssuredBlob_NoHmacCheck(const KeymasterKey
                                                               AuthorizationSet* hw_enforced,
                                                               AuthorizationSet* sw_enforced);
 
-}  // namespace keymaster
+}  // namespace keymaster;
+
+#endif  // SYSTEM_KEYMASTER_INTEGRITY_ASSURED_KEY_BLOB_

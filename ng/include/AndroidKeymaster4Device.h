@@ -22,7 +22,6 @@
 
 #include <hardware/keymaster_defs.h>
 #include <hidl/Status.h>
-#include <keymaster/km_version.h>
 
 namespace keymaster {
 class AndroidKeymaster;
@@ -50,8 +49,7 @@ using ::android::hardware::keymaster::V4_0::VerificationToken;
 
 class AndroidKeymaster4Device : public IKeymasterDevice {
   public:
-    explicit AndroidKeymaster4Device(SecurityLevel securityLevel)
-        : AndroidKeymaster4Device(KmVersion::KEYMASTER_4, securityLevel) {}
+    explicit AndroidKeymaster4Device(SecurityLevel securityLevel);
     virtual ~AndroidKeymaster4Device();
 
     Return<void> getHardwareInfo(getHardwareInfo_cb _hidl_cb) override;
@@ -102,8 +100,6 @@ class AndroidKeymaster4Device : public IKeymasterDevice {
     Return<ErrorCode> abort(uint64_t operationHandle) override;
 
   protected:
-    AndroidKeymaster4Device(::keymaster::KmVersion version, SecurityLevel securityLevel);
-
     std::unique_ptr<::keymaster::AndroidKeymaster> impl_;
     SecurityLevel securityLevel_;
 };

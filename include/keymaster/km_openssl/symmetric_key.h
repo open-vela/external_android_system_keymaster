@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef SYSTEM_KEYMASTER_SYMMETRIC_KEY_H_
+#define SYSTEM_KEYMASTER_SYMMETRIC_KEY_H_
 
 #include <keymaster/key_factory.h>
 #include <keymaster/random_source.h>
@@ -29,8 +30,9 @@ class SymmetricKey;
 class SymmetricKeyFactory : public KeyFactory, public SoftKeyFactoryMixin {
   public:
     explicit SymmetricKeyFactory(const SoftwareKeyBlobMaker* blob_maker,
-                                 const RandomSource* random_source)
-        : SoftKeyFactoryMixin(blob_maker), random_source_(*random_source) {}
+                                 const RandomSource* random_source) :
+            SoftKeyFactoryMixin(blob_maker),
+            random_source_(*random_source) {}
 
     keymaster_error_t GenerateKey(const AuthorizationSet& key_description,
                                   KeymasterKeyBlob* key_blob, AuthorizationSet* hw_enforced,
@@ -75,7 +77,10 @@ class SymmetricKey : public Key {
 
   protected:
     SymmetricKey(KeymasterKeyBlob&& key_material, AuthorizationSet&& hw_enforced,
-                 AuthorizationSet&& sw_enforced, const KeyFactory* key_factory);
+                 AuthorizationSet&& sw_enforced,
+                 const KeyFactory* key_factory);
 };
 
 }  // namespace keymaster
+
+#endif  // SYSTEM_KEYMASTER_AES_KEY_H_

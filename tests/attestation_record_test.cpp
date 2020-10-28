@@ -40,7 +40,6 @@ class TestContext : public AttestationRecordContext {
         return KM_ERROR_OK;
     }
     keymaster_error_t GetVerifiedBootParams(keymaster_blob_t* verified_boot_key,
-                                            keymaster_blob_t* /* verified_boot_hash */,
                                             keymaster_verified_boot_t* verified_boot_state,
                                             bool* device_locked) const override {
         verified_boot_key->data = vboot_key_;

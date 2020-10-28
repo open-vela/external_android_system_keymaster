@@ -197,9 +197,7 @@ keymaster_error_t BlockCipherEvpOperation::Finish(const AuthorizationSet& additi
     int output_written = -1;
     if (!EVP_CipherFinal_ex(&ctx_, output->peek_write(), &output_written)) {
         if (tag_length_ > 0) return KM_ERROR_VERIFICATION_FAILED;
-        char buf[128];
-        ERR_error_string_n(ERR_peek_last_error(), buf, sizeof(buf));
-        LOG_E("Error encrypting final block: %s", buf);
+        LOG_E("Error encrypting final block: %s", ERR_error_string(ERR_peek_last_error(), nullptr));
         return TranslateLastOpenSslError();
     }
 

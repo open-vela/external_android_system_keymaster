@@ -1,6 +1,5 @@
 shared_test_libs = [
     "libbase",
-    "libcppbor_external",
     "libcrypto",
     "libcutils",
     "libhidlbase",

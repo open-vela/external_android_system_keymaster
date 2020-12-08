@@ -14,18 +14,30 @@
  * limitations under the License.
  */
 
-#ifndef SYSTEM_KEYMASTER_ATTESTATION_RECORD_H_
-#define SYSTEM_KEYMASTER_ATTESTATION_RECORD_H_
+#pragma once
 
 #include <hardware/keymaster_defs.h>
 
 #include <keymaster/authorization_set.h>
+#include <keymaster/km_version.h>
 
+#include <cppbor.h>
 #include <openssl/asn1t.h>
+
+#include <vector>
+
+#define remove_type_mask(tag) (tag & 0x0FFFFFFF)
 
 namespace keymaster {
 
-constexpr uint kCurrentKeymasterVersion = 41;
+constexpr KmVersion kCurrentKmVersion = KmVersion::KEYMASTER_4_1;
+
+constexpr int EAT_CLAIM_PRIVATE_BASE = -80000;
+constexpr int EAT_CLAIM_PRIVATE_NON_KM_BASE = EAT_CLAIM_PRIVATE_BASE - 2000;
+
+constexpr int64_t convert_to_eat_claim(keymaster_tag_t tag) {
+    return EAT_CLAIM_PRIVATE_BASE - remove_type_mask(tag);
+}
 
 struct stack_st_ASN1_TYPE_Delete {
     void operator()(stack_st_ASN1_TYPE* p) { sk_ASN1_TYPE_free(p); }
@@ -63,6 +75,7 @@ typedef struct km_auth_list {
     ASN1_INTEGER_SET* block_mode;
     ASN1_INTEGER_SET* digest;
     ASN1_INTEGER_SET* padding;
+    ASN1_INTEGER_SET* mgf_digest;
     ASN1_NULL* caller_nonce;
     ASN1_INTEGER* min_mac_length;
     ASN1_INTEGER_SET* kdf;
@@ -98,6 +111,11 @@ typedef struct km_auth_list {
     ASN1_NULL* early_boot_only;
     ASN1_NULL* device_unique_attestation;
     ASN1_NULL* identity_credential_key;
+    ASN1_NULL* trusted_user_presence_required;
+    ASN1_NULL* storage_key;
+    ASN1_INTEGER* boot_patch_level;
+    ASN1_INTEGER* vendor_patchlevel;
+    ASN1_OCTET_STRING* confirmation_token;
 } KM_AUTH_LIST;
 
 ASN1_SEQUENCE(KM_AUTH_LIST) = {
@@ -107,6 +125,8 @@ ASN1_SEQUENCE(KM_AUTH_LIST) = {
     ASN1_EXP_SET_OF_OPT(KM_AUTH_LIST, block_mode, ASN1_INTEGER, TAG_BLOCK_MODE.masked_tag()),
     ASN1_EXP_SET_OF_OPT(KM_AUTH_LIST, digest, ASN1_INTEGER, TAG_DIGEST.masked_tag()),
     ASN1_EXP_SET_OF_OPT(KM_AUTH_LIST, padding, ASN1_INTEGER, TAG_PADDING.masked_tag()),
+    ASN1_EXP_SET_OF_OPT(KM_AUTH_LIST, mgf_digest, ASN1_INTEGER,
+                        TAG_RSA_OAEP_MGF_DIGEST.masked_tag()),
     ASN1_EXP_OPT(KM_AUTH_LIST, caller_nonce, ASN1_NULL, TAG_CALLER_NONCE.masked_tag()),
     ASN1_EXP_OPT(KM_AUTH_LIST, min_mac_length, ASN1_INTEGER, TAG_MIN_MAC_LENGTH.masked_tag()),
     ASN1_EXP_SET_OF_OPT(KM_AUTH_LIST, kdf, ASN1_INTEGER, TAG_KDF.masked_tag()),
@@ -159,6 +179,15 @@ ASN1_SEQUENCE(KM_AUTH_LIST) = {
                  TAG_DEVICE_UNIQUE_ATTESTATION.masked_tag()),
     ASN1_EXP_OPT(KM_AUTH_LIST, identity_credential_key, ASN1_NULL,
                  TAG_IDENTITY_CREDENTIAL_KEY.masked_tag()),
+    ASN1_EXP_OPT(KM_AUTH_LIST, trusted_user_presence_required, ASN1_NULL,
+                 TAG_TRUSTED_USER_PRESENCE_REQUIRED.masked_tag()),
+    ASN1_EXP_OPT(KM_AUTH_LIST, storage_key, ASN1_NULL, TAG_STORAGE_KEY.masked_tag()),
+    ASN1_EXP_OPT(KM_AUTH_LIST, trusted_confirmation_required, ASN1_NULL,
+                 TAG_TRUSTED_CONFIRMATION_REQUIRED.masked_tag()),
+    ASN1_EXP_OPT(KM_AUTH_LIST, boot_patch_level, ASN1_INTEGER, TAG_BOOT_PATCHLEVEL.masked_tag()),
+    ASN1_EXP_OPT(KM_AUTH_LIST, vendor_patchlevel, ASN1_INTEGER, TAG_VENDOR_PATCHLEVEL.masked_tag()),
+    ASN1_EXP_OPT(KM_AUTH_LIST, confirmation_token, ASN1_OCTET_STRING,
+                 TAG_CONFIRMATION_TOKEN.masked_tag()),
 } ASN1_SEQUENCE_END(KM_AUTH_LIST);
 DECLARE_ASN1_FUNCTIONS(KM_AUTH_LIST);
 
@@ -185,11 +214,109 @@ ASN1_SEQUENCE(KM_KEY_DESCRIPTION) = {
 } ASN1_SEQUENCE_END(KM_KEY_DESCRIPTION);
 DECLARE_ASN1_FUNCTIONS(KM_KEY_DESCRIPTION);
 
+enum class EatClaim {
+
+    // Official CWT claims, as defined in https://www.iana.org/assignments/cwt/cwt.xhtml
+
+    IAT = 6,
+    CTI = 7,
+
+    // Claims defined in
+    // https://github.com/laurencelundblade/ctoken/blob/master/inc/ctoken_eat_labels.h, by the
+    // author of the EAT standard, and in the ARM PSA. They should be considered stable at least
+    // until the standard is officially published.
+
+    UEID = -75009,
+    NONCE = -75008,
+    SECURITY_LEVEL = -76002,
+    BOOT_STATE = -76003,
+    SUBMODS = -76000,
+
+    // Claims specific to Android, and not part of the official EAT standard.
+
+    PURPOSE = convert_to_eat_claim(KM_TAG_PURPOSE),
+    ALGORITHM = convert_to_eat_claim(KM_TAG_ALGORITHM),
+    KEY_SIZE = convert_to_eat_claim(KM_TAG_KEY_SIZE),
+    BLOCK_MODE = convert_to_eat_claim(KM_TAG_BLOCK_MODE),
+    DIGEST = convert_to_eat_claim(KM_TAG_DIGEST),
+    PADDING = convert_to_eat_claim(KM_TAG_PADDING),
+    // TODO: Check if CALLER_NONCE is needed (see go/keymint-eat)
+    CALLER_NONCE = convert_to_eat_claim(KM_TAG_CALLER_NONCE),
+    MIN_MAC_LENGTH = convert_to_eat_claim(KM_TAG_MIN_MAC_LENGTH),
+    EC_CURVE = convert_to_eat_claim(KM_TAG_EC_CURVE),
+    RSA_PUBLIC_EXPONENT = convert_to_eat_claim(KM_TAG_RSA_PUBLIC_EXPONENT),
+    EARLY_BOOT_ONLY = convert_to_eat_claim(KM_TAG_EARLY_BOOT_ONLY),
+    ACTIVE_DATETIME = convert_to_eat_claim(KM_TAG_ACTIVE_DATETIME),
+    ORIGINATION_EXPIRE_DATETIME = convert_to_eat_claim(KM_TAG_ORIGINATION_EXPIRE_DATETIME),
+    USAGE_EXPIRE_DATETIME = convert_to_eat_claim(KM_TAG_USAGE_EXPIRE_DATETIME),
+    NO_AUTH_REQUIRED = convert_to_eat_claim(KM_TAG_NO_AUTH_REQUIRED),
+    USER_AUTH_TYPE = convert_to_eat_claim(KM_TAG_USER_AUTH_TYPE),
+    AUTH_TIMEOUT = convert_to_eat_claim(KM_TAG_AUTH_TIMEOUT),
+    ALLOW_WHILE_ON_BODY = convert_to_eat_claim(KM_TAG_ALLOW_WHILE_ON_BODY),
+    TRUSTED_USER_PRESENCE_REQUIRED = convert_to_eat_claim(KM_TAG_TRUSTED_USER_PRESENCE_REQUIRED),
+    TRUSTED_CONFIRMATION_REQUIRED = convert_to_eat_claim(KM_TAG_TRUSTED_CONFIRMATION_REQUIRED),
+    UNLOCKED_DEVICE_REQUIRED = convert_to_eat_claim(KM_TAG_UNLOCKED_DEVICE_REQUIRED),
+    ALL_APPLICATIONS = convert_to_eat_claim(KM_TAG_ALL_APPLICATIONS),
+    APPLICATION_ID = convert_to_eat_claim(KM_TAG_APPLICATION_ID),
+    ORIGIN = convert_to_eat_claim(KM_TAG_ORIGIN),
+    ROLLBACK_RESISTANT = convert_to_eat_claim(KM_TAG_ROLLBACK_RESISTANT),
+    OS_VERSION = convert_to_eat_claim(KM_TAG_OS_VERSION),
+    OS_PATCHLEVEL = convert_to_eat_claim(KM_TAG_OS_PATCHLEVEL),
+    ATTESTATION_APPLICATION_ID = convert_to_eat_claim(KM_TAG_ATTESTATION_APPLICATION_ID),
+    ATTESTATION_ID_BRAND = convert_to_eat_claim(KM_TAG_ATTESTATION_ID_BRAND),
+    ATTESTATION_ID_DEVICE = convert_to_eat_claim(KM_TAG_ATTESTATION_ID_DEVICE),
+    ATTESTATION_ID_PRODUCT = convert_to_eat_claim(KM_TAG_ATTESTATION_ID_PRODUCT),
+    ATTESTATION_ID_SERIAL = convert_to_eat_claim(KM_TAG_ATTESTATION_ID_SERIAL),
+    ATTESTATION_ID_MEID = convert_to_eat_claim(KM_TAG_ATTESTATION_ID_MEID),
+    ATTESTATION_ID_MANUFACTURER = convert_to_eat_claim(KM_TAG_ATTESTATION_ID_MANUFACTURER),
+    VENDOR_PATCHLEVEL = convert_to_eat_claim(KM_TAG_VENDOR_PATCHLEVEL),
+    BOOT_PATCHLEVEL = convert_to_eat_claim(KM_TAG_BOOT_PATCHLEVEL),
+    ATTESTATION_ID_MODEL = convert_to_eat_claim(KM_TAG_ATTESTATION_ID_MODEL),
+    DEVICE_UNIQUE_ATTESTATION = convert_to_eat_claim(KM_TAG_DEVICE_UNIQUE_ATTESTATION),
+    IDENTITY_CREDENTIAL_KEY = convert_to_eat_claim(KM_TAG_IDENTITY_CREDENTIAL_KEY),
+    STORAGE_KEY = convert_to_eat_claim(KM_TAG_STORAGE_KEY),
+    CONFIRMATION_TOKEN = convert_to_eat_claim(KM_TAG_CONFIRMATION_TOKEN),
+
+    // Claims specific to Android that do not exist as Keymint tags.
+
+    VERIFIED_BOOT_KEY = EAT_CLAIM_PRIVATE_NON_KM_BASE - 1,
+    DEVICE_LOCKED = EAT_CLAIM_PRIVATE_NON_KM_BASE - 2,
+    VERIFIED_BOOT_HASH = EAT_CLAIM_PRIVATE_NON_KM_BASE - 3,
+    ATTESTATION_VERSION = EAT_CLAIM_PRIVATE_NON_KM_BASE - 4,
+    KEYMASTER_VERSION = EAT_CLAIM_PRIVATE_NON_KM_BASE - 5,
+    OFFICIAL_BUILD = EAT_CLAIM_PRIVATE_NON_KM_BASE - 6,
+};
+
+enum class EatSecurityLevel {
+    UNRESTRICTED = 1,
+    RESTRICTED = 2,
+    SECURE_RESTRICTED = 3,
+    HARDWARE = 4,
+};
+
+enum class EatEcCurve {
+    P_224 = KM_EC_CURVE_P_224,
+    P_256 = KM_EC_CURVE_P_256,
+    P_384 = KM_EC_CURVE_P_384,
+    P_521 = KM_EC_CURVE_P_521,
+};
+
+static const char kEatSubmodNameSoftware[] = "software";
+static const char kEatSubmodNameTee[] = "tee";
+
+constexpr size_t kImeiBlobLength = 15;
+constexpr size_t kUeidLength = 15;
+constexpr uint8_t kImeiTypeByte = 0x03;
+
 class AttestationRecordContext {
   protected:
     virtual ~AttestationRecordContext() {}
 
   public:
+    explicit AttestationRecordContext(KmVersion version) : version_(version) {}
+
+    KmVersion GetKmVersion() const { return version_; }
+
     /**
      * Returns the security level (SW or TEE) of this keymaster implementation.
      */
@@ -226,13 +353,14 @@ class AttestationRecordContext {
      * implementations, these will be the values reported by the bootloader. By default,  verified
      * boot state is unknown, and KM_ERROR_UNIMPLEMENTED is returned.
      */
-    virtual keymaster_error_t
-    GetVerifiedBootParams(keymaster_blob_t* /* verified_boot_key */,
-                          keymaster_blob_t* /* verified_boot_hash */,
-                          keymaster_verified_boot_t* /* verified_boot_state */,
-                          bool* /* device_locked */) const {
+    virtual keymaster_error_t GetVerifiedBootParams(
+        keymaster_blob_t* /* verified_boot_key */, keymaster_blob_t* /* verified_boot_hash */,
+        keymaster_verified_boot_t* /* verified_boot_state */, bool* /* device_locked */) const {
         return KM_ERROR_UNIMPLEMENTED;
     }
+
+  private:
+    const KmVersion version_;
 };
 
 /**
@@ -247,12 +375,14 @@ class AttestationRecordContext {
  * 11129 = Google
  * 2 = Google security
  * 1 = certificate extension
- * 17 = Android attestation extension.
+ * 17 / 25 = ASN.1 attestation extension / EAT attestation extension
  */
-static const char kAttestionRecordOid[] = "1.3.6.1.4.1.11129.2.1.17";
+static const char kAsn1TokenOid[] = "1.3.6.1.4.1.11129.2.1.17";
+static const char kEatTokenOid[] = "1.3.6.1.4.1.11129.2.1.25";
 
 // This build_attestation_record sets the keymaster version to the default
-// value.
+// value, and chooses the correct attestation extension (ASN.1 or EAT) based
+// on that value.
 keymaster_error_t build_attestation_record(const AuthorizationSet& attestation_params,
                                            AuthorizationSet software_enforced,
                                            AuthorizationSet tee_enforced,
@@ -260,13 +390,13 @@ keymaster_error_t build_attestation_record(const AuthorizationSet& attestation_p
                                            UniquePtr<uint8_t[]>* asn1_key_desc,
                                            size_t* asn1_key_desc_len);
 
-// Builds attestation record, same as above, except this allows the keymaster
-// version to be set to different value than the default.
-keymaster_error_t
-build_attestation_record(const AuthorizationSet& attestation_params, AuthorizationSet sw_enforced,
-                         AuthorizationSet tee_enforced, const AttestationRecordContext& context,
-                         const uint keymaster_version, UniquePtr<uint8_t[]>* asn1_key_desc,
-                         size_t* asn1_key_desc_len);
+// Builds EAT record, with the same values as the attestation record above,
+// but encoded as a CBOR (EAT) structure rather than an ASN.1 structure.
+keymaster_error_t build_eat_record(const AuthorizationSet& attestation_params,
+                                   AuthorizationSet software_enforced,
+                                   AuthorizationSet tee_enforced,
+                                   const AttestationRecordContext& context,
+                                   std::vector<uint8_t>* eat_token);
 
 /**
  * Helper functions for attestation record tests. Caller takes ownership of
@@ -290,9 +420,67 @@ keymaster_error_t parse_root_of_trust(const uint8_t* asn1_key_desc, size_t asn1_
                                       keymaster_verified_boot_t* verified_boot_state,
                                       bool* device_locked);
 
+keymaster_error_t build_eat_submod(const AuthorizationSet& auth_list,
+                                   EatSecurityLevel security_level, cppbor::Map* submod);
+
 keymaster_error_t build_auth_list(const AuthorizationSet& auth_list, KM_AUTH_LIST* record);
 
-keymaster_error_t extract_auth_list(const KM_AUTH_LIST* record, AuthorizationSet* auth_list);
-}  // namespace keymaster
+keymaster_error_t parse_eat_record(
+    const uint8_t* eat_key_desc, size_t eat_key_desc_len, uint32_t* attestation_version,
+    keymaster_security_level_t* attestation_security_level, uint32_t* keymaster_version,
+    keymaster_security_level_t* keymaster_security_level, keymaster_blob_t* attestation_challenge,
+    AuthorizationSet* software_enforced, AuthorizationSet* tee_enforced,
+    keymaster_blob_t* unique_id, keymaster_blob_t* verified_boot_key,
+    keymaster_verified_boot_t* verified_boot_state, bool* device_locked,
+    std::vector<int64_t>* unexpected_claims);
 
-#endif  // SYSTEM_KEYMASTER_ATTESTATION_RECORD_H_
+keymaster_error_t parse_eat_submod(const cppbor::Map* submod_values,
+                                   AuthorizationSet* software_enforced,
+                                   AuthorizationSet* tee_enforced);
+
+keymaster_error_t extract_auth_list(const KM_AUTH_LIST* record, AuthorizationSet* auth_list);
+
+/**
+ * Convert a KeymasterContext::Version to the keymaster version number used in attestations.
+ */
+inline static uint version_to_attestation_km_version(KmVersion version) {
+    switch (version) {
+    default:
+    case KmVersion::KEYMASTER_1:
+    case KmVersion::KEYMASTER_1_1:
+        return 0;  // Attestation not actually supported.
+    case KmVersion::KEYMASTER_2:
+        return 2;
+    case KmVersion::KEYMASTER_3:
+        return 3;
+    case KmVersion::KEYMASTER_4:
+        return 4;
+    case KmVersion::KEYMASTER_4_1:
+        return 41;
+    case KmVersion::KEYMINT_1:
+        return 100;
+    }
+}
+
+/**
+ * Convert a KeymasterContext::Version to the corresponding attestation format version number.
+ */
+inline static uint version_to_attestation_version(KmVersion version) {
+    switch (version) {
+    default:
+    case KmVersion::KEYMASTER_1:
+        return 0;  // Attestation not actually supported.
+    case KmVersion::KEYMASTER_2:
+        return 1;
+    case KmVersion::KEYMASTER_3:
+        return 2;
+    case KmVersion::KEYMASTER_4:
+        return 3;
+    case KmVersion::KEYMASTER_4_1:
+        return 4;
+    case KmVersion::KEYMINT_1:
+        return 5;
+    }
+}
+
+}  // namespace keymaster

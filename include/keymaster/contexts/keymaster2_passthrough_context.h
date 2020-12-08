@@ -24,6 +24,7 @@
 #include <hardware/keymaster_defs.h>
 
 #include <keymaster/keymaster_context.h>
+#include <keymaster/km_version.h>
 #include <keymaster/legacy_support/keymaster_passthrough_engine.h>
 #include <keymaster/legacy_support/keymaster_passthrough_key.h>
 
@@ -31,7 +32,9 @@ namespace keymaster {
 
 class Keymaster2PassthroughContext : public KeymasterContext {
   public:
-    explicit Keymaster2PassthroughContext(keymaster2_device_t* dev);
+    explicit Keymaster2PassthroughContext(KmVersion version, keymaster2_device_t* dev);
+
+    KmVersion GetKmVersion() const override { return version_; }
 
     /**
      * Sets the system version as reported by the system *itself*.  This is used to verify that the
@@ -99,8 +102,8 @@ class Keymaster2PassthroughContext : public KeymasterContext {
      */
     KeymasterEnforcement* enforcement_policy() override;
 
-    keymaster_error_t GenerateAttestation(const Key& key, const AuthorizationSet& attest_params,
-                                          CertChainPtr* cert_chain) const override;
+    CertificateChain GenerateAttestation(const Key& key, const AuthorizationSet& attest_params,
+                                         keymaster_error_t* cert_chain) const override;
 
     keymaster_error_t
     UnwrapKey(const KeymasterKeyBlob& wrapped_key_blob, const KeymasterKeyBlob& wrapping_key_blob,
@@ -115,6 +118,7 @@ class Keymaster2PassthroughContext : public KeymasterContext {
     UniquePtr<KeymasterPassthroughEngine> engine_;
     uint32_t os_version_;
     uint32_t os_patchlevel_;
+    const KmVersion version_;
 };
 
 }  // namespace keymaster

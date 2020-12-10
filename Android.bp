@@ -122,9 +122,8 @@ cc_library {
         "libcrypto",
         "libcppbor_external",
     ],
-    export_shared_lib_headers: ["libcppbor_external"],
-    header_libs: ["libhardware_headers"],
-    export_header_lib_headers: ["libhardware_headers"],
+    header_libs: ["libhardware_headers", "libcppbor_external"],
+    export_header_lib_headers: ["libhardware_headers", "libcppbor_external"],
     defaults: ["keymaster_defaults" ],
     cflags: [
         "-DBORINGSSL_NO_CXX",

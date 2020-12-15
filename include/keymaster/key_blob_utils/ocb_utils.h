@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef SYSTEM_KEYMASTER_OCB_UTILS_H_
+#define SYSTEM_KEYMASTER_OCB_UTILS_H_
 
 #include "ae.h"
 
@@ -25,7 +26,7 @@
 namespace keymaster {
 
 class AuthorizationSet;
-template <typename BlobType> struct TKeymasterBlob;
+template<typename BlobType> struct TKeymasterBlob;
 typedef TKeymasterBlob<keymaster_key_blob_t> KeymasterKeyBlob;
 
 static const int OCB_NONCE_LENGTH = 12;
@@ -44,3 +45,5 @@ keymaster_error_t OcbDecryptKey(const AuthorizationSet& hw_enforced,
                                 const Buffer& tag, KeymasterKeyBlob* plaintext);
 
 }  // namespace keymaster
+
+#endif  // SYSTEM_KEYMASTER_OCB_UTILS_H_

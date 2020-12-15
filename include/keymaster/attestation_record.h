@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef SYSTEM_KEYMASTER_ATTESTATION_RECORD_H_
+#define SYSTEM_KEYMASTER_ATTESTATION_RECORD_H_
 
 #include <hardware/keymaster_defs.h>
 
@@ -350,9 +351,11 @@ class AttestationRecordContext {
      * implementations, these will be the values reported by the bootloader. By default,  verified
      * boot state is unknown, and KM_ERROR_UNIMPLEMENTED is returned.
      */
-    virtual keymaster_error_t GetVerifiedBootParams(
-        keymaster_blob_t* /* verified_boot_key */, keymaster_blob_t* /* verified_boot_hash */,
-        keymaster_verified_boot_t* /* verified_boot_state */, bool* /* device_locked */) const {
+    virtual keymaster_error_t
+    GetVerifiedBootParams(keymaster_blob_t* /* verified_boot_key */,
+                          keymaster_blob_t* /* verified_boot_hash */,
+                          keymaster_verified_boot_t* /* verified_boot_state */,
+                          bool* /* device_locked */) const {
         return KM_ERROR_UNIMPLEMENTED;
     }
 
@@ -481,3 +484,5 @@ inline static uint version_to_attestation_version(KmVersion version) {
 }
 
 }  // namespace keymaster
+
+#endif  // SYSTEM_KEYMASTER_ATTESTATION_RECORD_H_

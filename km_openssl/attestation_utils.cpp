@@ -20,14 +20,15 @@
 
 #include <hardware/keymaster_defs.h>
 
-#include <keymaster/attestation_record.h>
 #include <keymaster/authorization_set.h>
+#include <keymaster/attestation_record.h>
 #include <keymaster/km_openssl/asymmetric_key.h>
-#include <keymaster/km_openssl/openssl_err.h>
 #include <keymaster/km_openssl/openssl_utils.h>
+#include <keymaster/km_openssl/openssl_err.h>
 
-#include <openssl/evp.h>
 #include <openssl/x509v3.h>
+#include <openssl/evp.h>
+
 
 namespace keymaster {
 

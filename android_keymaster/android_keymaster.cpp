@@ -66,8 +66,7 @@ keymaster_error_t CheckVersionInfo(const AuthorizationSet& tee_enforced,
 }  // anonymous namespace
 
 AndroidKeymaster::AndroidKeymaster(KeymasterContext* context, size_t operation_table_size)
-    : context_(context), operation_table_(new (std::nothrow) OperationTable(operation_table_size)) {
-}
+    : context_(context), operation_table_(new(std::nothrow) OperationTable(operation_table_size)) {}
 
 AndroidKeymaster::~AndroidKeymaster() {}
 
@@ -123,16 +122,19 @@ void AndroidKeymaster::GetVersion(const GetVersionRequest&, GetVersionResponse* 
 
 void AndroidKeymaster::SupportedAlgorithms(const SupportedAlgorithmsRequest& /* request */,
                                            SupportedAlgorithmsResponse* response) {
-    if (response == nullptr) return;
+    if (response == nullptr)
+        return;
 
     response->error = KM_ERROR_OK;
 
     size_t algorithm_count = 0;
     const keymaster_algorithm_t* algorithms = context_->GetSupportedAlgorithms(&algorithm_count);
-    if (algorithm_count == 0) return;
+    if (algorithm_count == 0)
+        return;
     response->results_length = algorithm_count;
     response->results = dup_array(algorithms, algorithm_count);
-    if (!response->results) response->error = KM_ERROR_MEMORY_ALLOCATION_FAILED;
+    if (!response->results)
+        response->error = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 }
 
 template <typename T>
@@ -140,7 +142,8 @@ void GetSupported(const KeymasterContext& context, keymaster_algorithm_t algorit
                   keymaster_purpose_t purpose,
                   const T* (OperationFactory::*get_supported_method)(size_t* count) const,
                   SupportedResponse<T>* response) {
-    if (response == nullptr || !check_supported(context, algorithm, response)) return;
+    if (response == nullptr || !check_supported(context, algorithm, response))
+        return;
 
     const OperationFactory* factory = context.GetOperationFactory(algorithm, purpose);
     if (!factory) {
@@ -173,7 +176,8 @@ void AndroidKeymaster::SupportedDigests(const SupportedDigestsRequest& request,
 
 void AndroidKeymaster::SupportedImportFormats(const SupportedImportFormatsRequest& request,
                                               SupportedImportFormatsResponse* response) {
-    if (response == nullptr || !check_supported(*context_, request.algorithm, response)) return;
+    if (response == nullptr || !check_supported(*context_, request.algorithm, response))
+        return;
 
     size_t count;
     const keymaster_key_format_t* formats =
@@ -183,7 +187,8 @@ void AndroidKeymaster::SupportedImportFormats(const SupportedImportFormatsReques
 
 void AndroidKeymaster::SupportedExportFormats(const SupportedExportFormatsRequest& request,
                                               SupportedExportFormatsResponse* response) {
-    if (response == nullptr || !check_supported(*context_, request.algorithm, response)) return;
+    if (response == nullptr || !check_supported(*context_, request.algorithm, response))
+        return;
 
     size_t count;
     const keymaster_key_format_t* formats =
@@ -262,12 +267,15 @@ void AndroidKeymaster::GenerateKey(const GenerateKeyRequest& request,
 
 void AndroidKeymaster::GetKeyCharacteristics(const GetKeyCharacteristicsRequest& request,
                                              GetKeyCharacteristicsResponse* response) {
-    if (response == nullptr) return;
+    if (response == nullptr)
+        return;
 
     UniquePtr<Key> key;
     response->error =
-        context_->ParseKeyBlob(KeymasterKeyBlob(request.key_blob), request.additional_params, &key);
-    if (response->error != KM_ERROR_OK) return;
+        context_->ParseKeyBlob(KeymasterKeyBlob(request.key_blob), request.additional_params,
+                               &key);
+    if (response->error != KM_ERROR_OK)
+        return;
 
     // scavenge the key object for the auth lists
     response->enforced = move(key->hw_enforced());
@@ -278,17 +286,20 @@ void AndroidKeymaster::GetKeyCharacteristics(const GetKeyCharacteristicsRequest&
 
 void AndroidKeymaster::BeginOperation(const BeginOperationRequest& request,
                                       BeginOperationResponse* response) {
-    if (response == nullptr) return;
+    if (response == nullptr)
+        return;
     response->op_handle = 0;
 
     const KeyFactory* key_factory;
     UniquePtr<Key> key;
     response->error = LoadKey(request.key_blob, request.additional_params, &key_factory, &key);
-    if (response->error != KM_ERROR_OK) return;
+    if (response->error != KM_ERROR_OK)
+        return;
 
     response->error = KM_ERROR_UNKNOWN_ERROR;
     keymaster_algorithm_t key_algorithm;
-    if (!key->authorizations().GetTagValue(TAG_ALGORITHM, &key_algorithm)) return;
+    if (!key->authorizations().GetTagValue(TAG_ALGORITHM, &key_algorithm))
+        return;
 
     response->error = KM_ERROR_UNSUPPORTED_PURPOSE;
     OperationFactory* factory = key_factory->GetOperationFactory(request.purpose);
@@ -311,7 +322,8 @@ void AndroidKeymaster::BeginOperation(const BeginOperationRequest& request,
 
     response->output_params.Clear();
     response->error = operation->Begin(request.additional_params, &response->output_params);
-    if (response->error != KM_ERROR_OK) return;
+    if (response->error != KM_ERROR_OK)
+        return;
 
     response->op_handle = operation->operation_handle();
     response->error = operation_table_->Add(move(operation));
@@ -319,11 +331,13 @@ void AndroidKeymaster::BeginOperation(const BeginOperationRequest& request,
 
 void AndroidKeymaster::UpdateOperation(const UpdateOperationRequest& request,
                                        UpdateOperationResponse* response) {
-    if (response == nullptr) return;
+    if (response == nullptr)
+        return;
 
     response->error = KM_ERROR_INVALID_OPERATION_HANDLE;
     Operation* operation = operation_table_->Find(request.op_handle);
-    if (operation == nullptr) return;
+    if (operation == nullptr)
+        return;
 
     if (context_->enforcement_policy()) {
         response->error = context_->enforcement_policy()->AuthorizeOperation(
@@ -346,11 +360,13 @@ void AndroidKeymaster::UpdateOperation(const UpdateOperationRequest& request,
 
 void AndroidKeymaster::FinishOperation(const FinishOperationRequest& request,
                                        FinishOperationResponse* response) {
-    if (response == nullptr) return;
+    if (response == nullptr)
+        return;
 
     response->error = KM_ERROR_INVALID_OPERATION_HANDLE;
     Operation* operation = operation_table_->Find(request.op_handle);
-    if (operation == nullptr) return;
+    if (operation == nullptr)
+        return;
 
     if (context_->enforcement_policy()) {
         response->error = context_->enforcement_policy()->AuthorizeOperation(
@@ -369,7 +385,8 @@ void AndroidKeymaster::FinishOperation(const FinishOperationRequest& request,
 
 void AndroidKeymaster::AbortOperation(const AbortOperationRequest& request,
                                       AbortOperationResponse* response) {
-    if (!response) return;
+    if (!response)
+        return;
 
     Operation* operation = operation_table_->Find(request.op_handle);
     if (!operation) {
@@ -382,12 +399,14 @@ void AndroidKeymaster::AbortOperation(const AbortOperationRequest& request,
 }
 
 void AndroidKeymaster::ExportKey(const ExportKeyRequest& request, ExportKeyResponse* response) {
-    if (response == nullptr) return;
+    if (response == nullptr)
+        return;
 
     UniquePtr<Key> key;
     response->error =
         context_->ParseKeyBlob(KeymasterKeyBlob(request.key_blob), request.additional_params, &key);
-    if (response->error != KM_ERROR_OK) return;
+    if (response->error != KM_ERROR_OK)
+        return;
 
     UniquePtr<uint8_t[]> out_key;
     size_t size;
@@ -399,12 +418,15 @@ void AndroidKeymaster::ExportKey(const ExportKeyRequest& request, ExportKeyRespo
 }
 
 void AndroidKeymaster::AttestKey(const AttestKeyRequest& request, AttestKeyResponse* response) {
-    if (!response) return;
+    if (!response)
+        return;
 
     const KeyFactory* key_factory;
     UniquePtr<Key> key;
-    response->error = LoadKey(request.key_blob, request.attest_params, &key_factory, &key);
-    if (response->error != KM_ERROR_OK) return;
+    response->error = LoadKey(request.key_blob, request.attest_params,
+                              &key_factory, &key);
+    if (response->error != KM_ERROR_OK)
+        return;
 
     keymaster_blob_t attestation_application_id;
     if (request.attest_params.GetTagValue(TAG_ATTESTATION_APPLICATION_ID,
@@ -424,12 +446,14 @@ void AndroidKeymaster::AttestKey(const AttestKeyRequest& request, AttestKeyRespo
 }
 
 void AndroidKeymaster::UpgradeKey(const UpgradeKeyRequest& request, UpgradeKeyResponse* response) {
-    if (!response) return;
+    if (!response)
+        return;
 
     KeymasterKeyBlob upgraded_key;
     response->error = context_->UpgradeKeyBlob(KeymasterKeyBlob(request.key_blob),
                                                request.upgrade_params, &upgraded_key);
-    if (response->error != KM_ERROR_OK) return;
+    if (response->error != KM_ERROR_OK)
+        return;
     response->upgraded_key = upgraded_key.release();
 }
 
@@ -455,17 +479,20 @@ void AndroidKeymaster::ImportKey(const ImportKeyRequest& request, ImportKeyRespo
 }
 
 void AndroidKeymaster::DeleteKey(const DeleteKeyRequest& request, DeleteKeyResponse* response) {
-    if (!response) return;
+    if (!response)
+        return;
     response->error = context_->DeleteKey(KeymasterKeyBlob(request.key_blob));
 }
 
 void AndroidKeymaster::DeleteAllKeys(const DeleteAllKeysRequest&, DeleteAllKeysResponse* response) {
-    if (!response) return;
+    if (!response)
+        return;
     response->error = context_->DeleteAllKeys();
 }
 
 void AndroidKeymaster::Configure(const ConfigureRequest& request, ConfigureResponse* response) {
-    if (!response) return;
+    if (!response)
+        return;
     response->error = context_->SetSystemVersion(request.os_version, request.os_patchlevel);
 }
 
@@ -477,9 +504,10 @@ keymaster_error_t AndroidKeymaster::LoadKey(const keymaster_key_blob_t& key_blob
                                             const AuthorizationSet& additional_params,
                                             const KeyFactory** factory, UniquePtr<Key>* key) {
     KeymasterKeyBlob key_material;
-    keymaster_error_t error =
-        context_->ParseKeyBlob(KeymasterKeyBlob(key_blob), additional_params, key);
-    if (error != KM_ERROR_OK) return error;
+    keymaster_error_t error = context_->ParseKeyBlob(KeymasterKeyBlob(key_blob), additional_params,
+                                                     key);
+    if (error != KM_ERROR_OK)
+        return error;
     if (factory) *factory = (*key)->key_factory();
     return CheckVersionInfo((*key)->hw_enforced(), (*key)->sw_enforced(), *context_);
 }

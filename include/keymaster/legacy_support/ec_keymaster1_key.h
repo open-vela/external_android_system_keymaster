@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef SYSTEM_KEYMASTER_EC_KEYMASTER1_KEY_H_
+#define SYSTEM_KEYMASTER_EC_KEYMASTER1_KEY_H_
 
 #include <openssl/ecdsa.h>
 
@@ -52,7 +53,8 @@ class EcdsaKeymaster1KeyFactory : public EcKeyFactory {
 
     keymaster_error_t LoadKey(KeymasterKeyBlob&& key_material,
                               const AuthorizationSet& additional_params,
-                              AuthorizationSet&& hw_enforced, AuthorizationSet&& sw_enforced,
+                              AuthorizationSet&& hw_enforced,
+                              AuthorizationSet&& sw_enforced,
                               UniquePtr<Key>* key) const override;
 
     OperationFactory* GetOperationFactory(keymaster_purpose_t purpose) const override;
@@ -72,3 +74,5 @@ class EcdsaKeymaster1Key : public EcKey {
 };
 
 }  // namespace keymaster
+
+#endif  // SYSTEM_KEYMASTER_ECDSA_KEYMASTER1_KEY_H_

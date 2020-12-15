@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef SYSTEM_KEYMASTER_SOFT_KEYMASTER_LOGGER_H_
+#define SYSTEM_KEYMASTER_SOFT_KEYMASTER_LOGGER_H_
 
 #include <keymaster/logger.h>
 
 namespace keymaster {
 
-class SoftKeymasterLogger : public Logger {
-  public:
+class SoftKeymasterLogger : public Logger
+{
+public:
     SoftKeymasterLogger() { set_instance(this); }
 
     virtual int log_msg(LogLevel level, const char* fmt, va_list args) const;
 };
 
-}  // namespace keymaster
+} // namespace keymaster
+
+#endif // SYSTEM_KEYMASTER_SOFT_KEYMASTER_LOGGER_H_

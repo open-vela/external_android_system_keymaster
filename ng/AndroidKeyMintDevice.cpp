@@ -31,7 +31,6 @@
 namespace aidl::android::hardware::security::keymint {
 
 using namespace ::keymaster;
-using namespace km_utils;
 
 constexpr size_t kOperationTableSize = 16;
 

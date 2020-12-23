@@ -205,7 +205,8 @@ void AndroidKeymaster::AddRngEntropy(const AddEntropyRequest& request,
 
 void AndroidKeymaster::GenerateKey(const GenerateKeyRequest& request,
                                    GenerateKeyResponse* response) {
-    if (response == nullptr) return;
+    if (response == nullptr)
+        return;
 
     keymaster_algorithm_t algorithm;
     const KeyFactory* factory = nullptr;
@@ -223,7 +224,8 @@ void AndroidKeymaster::GenerateKey(const GenerateKeyRequest& request,
         response->unenforced.Clear();
         response->error = factory->GenerateKey(request.key_description, &key_blob,
                                                &response->enforced, &response->unenforced);
-        if (response->error == KM_ERROR_OK) response->key_blob = key_blob.release();
+        if (response->error == KM_ERROR_OK)
+            response->key_blob = key_blob.release();
     }
 }
 
@@ -379,8 +381,9 @@ void AndroidKeymaster::AttestKey(const AttestKeyRequest& request, AttestKeyRespo
         key->sw_enforced().push_back(TAG_ATTESTATION_APPLICATION_ID, attestation_application_id);
     }
 
-    response->certificate_chain =
+    CertificateChain certchain =
         context_->GenerateAttestation(*key, request.attest_params, &response->error);
+    if (response->error == KM_ERROR_OK) response->certificate_chain = certchain.release();
 }
 
 void AndroidKeymaster::UpgradeKey(const UpgradeKeyRequest& request, UpgradeKeyResponse* response) {
@@ -394,7 +397,8 @@ void AndroidKeymaster::UpgradeKey(const UpgradeKeyRequest& request, UpgradeKeyRe
 }
 
 void AndroidKeymaster::ImportKey(const ImportKeyRequest& request, ImportKeyResponse* response) {
-    if (response == nullptr) return;
+    if (response == nullptr)
+        return;
 
     keymaster_algorithm_t algorithm;
     const KeyFactory* factory = nullptr;
@@ -408,7 +412,8 @@ void AndroidKeymaster::ImportKey(const ImportKeyRequest& request, ImportKeyRespo
         response->error = factory->ImportKey(request.key_description, request.key_format,
                                              KeymasterKeyBlob(key_material), &key_blob,
                                              &response->enforced, &response->unenforced);
-        if (response->error == KM_ERROR_OK) response->key_blob = key_blob.release();
+        if (response->error == KM_ERROR_OK)
+            response->key_blob = key_blob.release();
     }
 }
 

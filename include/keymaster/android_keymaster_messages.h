@@ -624,13 +624,19 @@ struct AttestKeyRequest : public KeymasterMessage {
 };
 
 struct AttestKeyResponse : public KeymasterResponse {
-    explicit AttestKeyResponse(int32_t ver = kDefaultMessageVersion) : KeymasterResponse(ver) {}
+    explicit AttestKeyResponse(int32_t ver = kDefaultMessageVersion) : KeymasterResponse(ver) {
+        certificate_chain.entry_count = 0;
+        certificate_chain.entries = nullptr;
+    }
+    ~AttestKeyResponse();
+
+    bool AllocateChain(size_t entry_count);
 
     size_t NonErrorSerializedSize() const override;
     uint8_t* NonErrorSerialize(uint8_t* buf, const uint8_t* end) const override;
     bool NonErrorDeserialize(const uint8_t** buf_ptr, const uint8_t* end) override;
 
-    CertificateChain certificate_chain;
+    keymaster_cert_chain_t certificate_chain;
 };
 
 struct UpgradeKeyRequest : public KeymasterMessage {

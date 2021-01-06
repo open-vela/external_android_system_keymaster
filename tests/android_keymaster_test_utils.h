@@ -245,14 +245,8 @@ class Keymaster2Test : public testing::TestWithParam<InstanceCreatorPtr> {
     std::string EncryptMessage(const std::string& message, keymaster_padding_t padding,
                                std::string* generated_nonce = nullptr);
     std::string EncryptMessage(const std::string& message, keymaster_digest_t digest,
-                               keymaster_digest_t mgf_digest, keymaster_padding_t padding,
-                               std::string* generated_nonce = nullptr);
-    std::string EncryptMessage(const std::string& message, keymaster_digest_t digest,
                                keymaster_padding_t padding, std::string* generated_nonce = nullptr);
     std::string EncryptMessage(const std::string& message, keymaster_block_mode_t block_mode,
-                               keymaster_padding_t padding, std::string* generated_nonce = nullptr);
-    std::string EncryptMessage(const AuthorizationSet& update_params, const std::string& message,
-                               keymaster_digest_t digest, keymaster_digest_t mgf_digest,
                                keymaster_padding_t padding, std::string* generated_nonce = nullptr);
     std::string EncryptMessage(const AuthorizationSet& update_params, const std::string& message,
                                keymaster_digest_t digest, keymaster_padding_t padding,
@@ -272,8 +266,6 @@ class Keymaster2Test : public testing::TestWithParam<InstanceCreatorPtr> {
                                keymaster_padding_t padding);
     std::string DecryptMessage(const std::string& ciphertext, keymaster_digest_t digest,
                                keymaster_padding_t padding, const std::string& nonce);
-    std::string DecryptMessage(const std::string& ciphertext, keymaster_digest_t digest,
-                               keymaster_digest_t mgf_digest, keymaster_padding_t padding);
     std::string DecryptMessage(const std::string& ciphertext, keymaster_block_mode_t block_mode,
                                keymaster_padding_t padding, const std::string& nonce);
     std::string DecryptMessage(const AuthorizationSet& update_params, const std::string& ciphertext,

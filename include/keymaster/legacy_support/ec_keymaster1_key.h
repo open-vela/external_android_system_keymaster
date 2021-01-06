@@ -37,20 +37,18 @@ namespace keymaster {
  */
 class EcdsaKeymaster1KeyFactory : public EcKeyFactory {
   public:
-    EcdsaKeymaster1KeyFactory(const SoftwareKeyBlobMaker& blob_maker,
+    EcdsaKeymaster1KeyFactory(const SoftwareKeyBlobMaker* blob_maker,
                               const Keymaster1Engine* engine);
 
     keymaster_error_t GenerateKey(const AuthorizationSet& key_description,
                                   KeymasterKeyBlob* key_blob, AuthorizationSet* hw_enforced,
-                                  AuthorizationSet* sw_enforced,
-                                  CertificateChain* cert_chain) const override;
+                                  AuthorizationSet* sw_enforced) const override;
 
     keymaster_error_t ImportKey(const AuthorizationSet& key_description,
                                 keymaster_key_format_t input_key_material_format,
                                 const KeymasterKeyBlob& input_key_material,
                                 KeymasterKeyBlob* output_key_blob, AuthorizationSet* hw_enforced,
-                                AuthorizationSet* sw_enforced,
-                                CertificateChain* cert_chain) const override;
+                                AuthorizationSet* sw_enforced) const override;
 
     keymaster_error_t LoadKey(KeymasterKeyBlob&& key_material,
                               const AuthorizationSet& additional_params,

@@ -218,14 +218,15 @@ bool Keymaster1LegacySupport::RequiresSoftwareDigesting(const keymaster_digest_t
     return !has_purpose;
 }
 
-template <>
-keymaster_error_t Keymaster1ArbitrationFactory<EcdsaKeymaster1KeyFactory>::GenerateKey(
-    const AuthorizationSet& key_description, KeymasterKeyBlob* key_blob,
-    AuthorizationSet* hw_enforced, AuthorizationSet* sw_enforced,
-    CertificateChain* cert_chain) const {
+template<>
+keymaster_error_t
+Keymaster1ArbitrationFactory<EcdsaKeymaster1KeyFactory>::GenerateKey(
+        const AuthorizationSet& key_description,
+        KeymasterKeyBlob* key_blob, AuthorizationSet* hw_enforced,
+        AuthorizationSet* sw_enforced) const {
     if (legacy_support_.RequiresSoftwareDigesting(key_description)) {
         return software_digest_factory_.GenerateKey(key_description, key_blob, hw_enforced,
-                                                    sw_enforced, cert_chain);
+                                             sw_enforced);
     } else {
         AuthorizationSet mutable_key_description = key_description;
         keymaster_ec_curve_t curve;
@@ -248,7 +249,7 @@ keymaster_error_t Keymaster1ArbitrationFactory<EcdsaKeymaster1KeyFactory>::Gener
         }
 
         return passthrough_factory_.GenerateKey(mutable_key_description, key_blob, hw_enforced,
-                                                sw_enforced, cert_chain);
+                                                sw_enforced);
     }
 }
 

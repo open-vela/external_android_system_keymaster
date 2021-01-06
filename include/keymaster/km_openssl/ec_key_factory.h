@@ -27,7 +27,7 @@ namespace keymaster {
 
 class EcKeyFactory : public AsymmetricKeyFactory, public SoftKeyFactoryMixin {
   public:
-    explicit EcKeyFactory(const SoftwareKeyBlobMaker& blob_maker)
+    explicit EcKeyFactory(const SoftwareKeyBlobMaker* blob_maker)
         : SoftKeyFactoryMixin(blob_maker) {}
 
     keymaster_algorithm_t keymaster_key_type() const override { return KM_ALGORITHM_EC; }
@@ -35,14 +35,12 @@ class EcKeyFactory : public AsymmetricKeyFactory, public SoftKeyFactoryMixin {
 
     keymaster_error_t GenerateKey(const AuthorizationSet& key_description,
                                   KeymasterKeyBlob* key_blob, AuthorizationSet* hw_enforced,
-                                  AuthorizationSet* sw_enforced,
-                                  CertificateChain* cert_chain) const override;
+                                  AuthorizationSet* sw_enforced) const override;
     keymaster_error_t ImportKey(const AuthorizationSet& key_description,
                                 keymaster_key_format_t input_key_material_format,
                                 const KeymasterKeyBlob& input_key_material,
                                 KeymasterKeyBlob* output_key_blob, AuthorizationSet* hw_enforced,
-                                AuthorizationSet* sw_enforced,
-                                CertificateChain* cert_chain) const override;
+                                AuthorizationSet* sw_enforced) const override;
 
     keymaster_error_t CreateEmptyKey(AuthorizationSet&& hw_enforced, AuthorizationSet&& sw_enforced,
                                      UniquePtr<AsymmetricKey>* key) const override;

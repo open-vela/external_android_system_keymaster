@@ -24,7 +24,7 @@
 
 namespace keymaster {
 
-RsaKeymaster1KeyFactory::RsaKeymaster1KeyFactory(const SoftwareKeyBlobMaker& blob_maker,
+RsaKeymaster1KeyFactory::RsaKeymaster1KeyFactory(const SoftwareKeyBlobMaker* blob_maker,
                                                  const Keymaster1Engine* engine)
     : RsaKeyFactory(blob_maker), engine_(engine),
       sign_factory_(new RsaKeymaster1OperationFactory(KM_PURPOSE_SIGN, engine)),
@@ -82,21 +82,16 @@ static void UpdateToWorkAroundUnsupportedDigests(const AuthorizationSet& key_des
 keymaster_error_t RsaKeymaster1KeyFactory::GenerateKey(const AuthorizationSet& key_description,
                                                        KeymasterKeyBlob* key_blob,
                                                        AuthorizationSet* hw_enforced,
-                                                       AuthorizationSet* sw_enforced,
-                                                       CertificateChain* /* cert_chain */) const {
+                                                       AuthorizationSet* sw_enforced) const {
     AuthorizationSet key_params_copy;
     UpdateToWorkAroundUnsupportedDigests(key_description, &key_params_copy);
     return engine_->GenerateKey(key_params_copy, key_blob, hw_enforced, sw_enforced);
 }
 
-keymaster_error_t  //
-RsaKeymaster1KeyFactory::ImportKey(const AuthorizationSet& key_description,
-                                   keymaster_key_format_t input_key_material_format,
-                                   const KeymasterKeyBlob& input_key_material,
-                                   KeymasterKeyBlob* output_key_blob,  //
-                                   AuthorizationSet* hw_enforced,      //
-                                   AuthorizationSet* sw_enforced,
-                                   CertificateChain* /* cert_chain */) const {
+keymaster_error_t RsaKeymaster1KeyFactory::ImportKey(
+    const AuthorizationSet& key_description, keymaster_key_format_t input_key_material_format,
+    const KeymasterKeyBlob& input_key_material, KeymasterKeyBlob* output_key_blob,
+    AuthorizationSet* hw_enforced, AuthorizationSet* sw_enforced) const {
     AuthorizationSet key_params_copy;
     UpdateToWorkAroundUnsupportedDigests(key_description, &key_params_copy);
     return engine_->ImportKey(key_params_copy, input_key_material_format, input_key_material,

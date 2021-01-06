@@ -52,8 +52,7 @@ OperationFactory* RsaKeyFactory::GetOperationFactory(keymaster_purpose_t purpose
 keymaster_error_t RsaKeyFactory::GenerateKey(const AuthorizationSet& key_description,
                                              KeymasterKeyBlob* key_blob,
                                              AuthorizationSet* hw_enforced,
-                                             AuthorizationSet* sw_enforced,
-                                             CertificateChain* /* cert_chain */) const {
+                                             AuthorizationSet* sw_enforced) const {
     if (!key_blob || !hw_enforced || !sw_enforced) return KM_ERROR_OUTPUT_PARAMETER_NULL;
 
     const AuthorizationSet& authorizations(key_description);
@@ -103,8 +102,7 @@ keymaster_error_t RsaKeyFactory::ImportKey(const AuthorizationSet& key_descripti
                                            const KeymasterKeyBlob& input_key_material,
                                            KeymasterKeyBlob* output_key_blob,
                                            AuthorizationSet* hw_enforced,
-                                           AuthorizationSet* sw_enforced,
-                                           CertificateChain* /* cert_chain */) const {
+                                           AuthorizationSet* sw_enforced) const {
     if (!output_key_blob || !hw_enforced || !sw_enforced) return KM_ERROR_OUTPUT_PARAMETER_NULL;
 
     AuthorizationSet authorizations;

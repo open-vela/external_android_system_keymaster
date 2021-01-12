@@ -17,17 +17,16 @@
 #include <keymaster/attestation_record.h>
 
 #include <assert.h>
-#include <math.h>
-
-#include <unordered_map>
 
 #include <cppbor_parse.h>
 #include <openssl/asn1t.h>
 
 #include <keymaster/android_keymaster_utils.h>
-#include <keymaster/attestation_context.h>
 #include <keymaster/km_openssl/openssl_err.h>
 #include <keymaster/km_openssl/openssl_utils.h>
+
+#include <math.h>
+#include <unordered_map>
 
 #define ASSERT_OR_RETURN_ERROR(stmt, error)                                                        \
     do {                                                                                           \
@@ -255,17 +254,16 @@ bool is_valid_attestation_challenge(const keymaster_blob_t& attestation_challeng
     return (attestation_challenge.data_length <= kMaximumAttestationChallengeLength);
 }
 
-Buffer generate_unique_id(const AttestationContext& context,  //
-                          const AuthorizationSet& sw_enforced,
-                          const AuthorizationSet& attestation_params,  //
-                          keymaster_error_t* error) {
+keymaster_error_t generate_unique_id(const AttestationRecordContext& context,
+                                     const AuthorizationSet& sw_enforced,
+                                     const AuthorizationSet& attestation_params,
+                                     Buffer* unique_id) {
     uint64_t creation_datetime;
     // Only check sw_enforced for TAG_CREATION_DATETIME, since it shouldn't be in tee_enforced,
     // since this implementation has no secure wall clock.
     if (!sw_enforced.GetTagValue(TAG_CREATION_DATETIME, &creation_datetime)) {
         LOG_E("Unique ID cannot be created without creation datetime", 0);
-        *error = KM_ERROR_INVALID_KEY_BLOB;
-        return {};
+        return KM_ERROR_INVALID_KEY_BLOB;
     }
 
     keymaster_blob_t application_id = {nullptr, 0};
@@ -273,7 +271,7 @@ Buffer generate_unique_id(const AttestationContext& context,  //
 
     return context.GenerateUniqueId(creation_datetime, application_id,
                                     attestation_params.GetTagValue(TAG_RESET_SINCE_ID_ROTATION),
-                                    error);
+                                    unique_id);
 }
 
 // Put the contents of the keymaster AuthorizationSet auth_list into the EAT record structure.
@@ -814,7 +812,7 @@ keymaster_error_t build_auth_list(const AuthorizationSet& auth_list, KM_AUTH_LIS
 // and tee_enforced.
 keymaster_error_t build_eat_record(const AuthorizationSet& attestation_params,
                                    AuthorizationSet sw_enforced, AuthorizationSet tee_enforced,
-                                   const AttestationContext& context,
+                                   const AttestationRecordContext& context,
                                    std::vector<uint8_t>* eat_token) {
     ASSERT_OR_RETURN_ERROR(eat_token, KM_ERROR_UNEXPECTED_NULL_POINTER);
 
@@ -834,22 +832,26 @@ keymaster_error_t build_eat_record(const AuthorizationSet& attestation_params,
         return KM_ERROR_UNKNOWN_ERROR;
     }
 
-    keymaster_error_t error;
-    const AttestationContext::VerifiedBootParams* vb_params = context.GetVerifiedBootParams(&error);
+    keymaster_blob_t verified_boot_key;
+    keymaster_blob_t verified_boot_hash;
+    keymaster_verified_boot_t verified_boot_state;
+    bool device_locked;
+    keymaster_error_t error = context.GetVerifiedBootParams(&verified_boot_key, &verified_boot_hash,
+                                                            &verified_boot_state, &device_locked);
     if (error != KM_ERROR_OK) return error;
 
-    if (vb_params->verified_boot_key.data_length) {
-        eat_record.add(EatClaim::VERIFIED_BOOT_KEY, blob_to_bstr(vb_params->verified_boot_key));
+    if (verified_boot_key.data_length) {
+        eat_record.add(EatClaim::VERIFIED_BOOT_KEY, blob_to_bstr(verified_boot_key));
     }
-    if (vb_params->verified_boot_hash.data_length) {
-        eat_record.add(EatClaim::VERIFIED_BOOT_HASH, blob_to_bstr(vb_params->verified_boot_hash));
+    if (verified_boot_hash.data_length) {
+        eat_record.add(EatClaim::VERIFIED_BOOT_HASH, blob_to_bstr(verified_boot_hash));
     }
-    if (vb_params->device_locked) {
-        eat_record.add(EatClaim::DEVICE_LOCKED, vb_params->device_locked);
+    if (device_locked) {
+        eat_record.add(EatClaim::DEVICE_LOCKED, device_locked);
     }
 
-    bool verified_or_self_signed = (vb_params->verified_boot_state == KM_VERIFIED_BOOT_VERIFIED ||
-                                    vb_params->verified_boot_state == KM_VERIFIED_BOOT_SELF_SIGNED);
+    bool verified_or_self_signed = (verified_boot_state == KM_VERIFIED_BOOT_VERIFIED ||
+                                    verified_boot_state == KM_VERIFIED_BOOT_SELF_SIGNED);
     auto eat_boot_state = cppbor::Array()
                               .add(verified_or_self_signed)  // secure-boot-enabled
                               .add(verified_or_self_signed)  // debug-disabled
@@ -857,8 +859,7 @@ keymaster_error_t build_eat_record(const AuthorizationSet& attestation_params,
                               .add(verified_or_self_signed)  // debug-permanent-disable
                               .add(false);  // debug-full-permanent-disable (no way to verify)
     eat_record.add(EatClaim::BOOT_STATE, std::move(eat_boot_state));
-    eat_record.add(EatClaim::OFFICIAL_BUILD,
-                   vb_params->verified_boot_state == KM_VERIFIED_BOOT_VERIFIED);
+    eat_record.add(EatClaim::OFFICIAL_BUILD, verified_boot_state == KM_VERIFIED_BOOT_VERIFIED);
 
     eat_record.add(EatClaim::ATTESTATION_VERSION,
                    version_to_attestation_version(context.GetKmVersion()));
@@ -942,9 +943,10 @@ keymaster_error_t build_eat_record(const AuthorizationSet& attestation_params,
         keymaster_blob_t application_id = {nullptr, 0};
         sw_enforced.GetTagValue(TAG_APPLICATION_ID, &application_id);
 
-        Buffer unique_id = context.GenerateUniqueId(
-            creation_datetime, application_id,
-            attestation_params.GetTagValue(TAG_RESET_SINCE_ID_ROTATION), &error);
+        Buffer unique_id;
+        context.GenerateUniqueId(creation_datetime, application_id,
+                                 attestation_params.GetTagValue(TAG_RESET_SINCE_ID_ROTATION),
+                                 &unique_id);
         if (error != KM_ERROR_OK) return error;
 
         eat_record.add(EatClaim::CTI,
@@ -958,12 +960,10 @@ keymaster_error_t build_eat_record(const AuthorizationSet& attestation_params,
 
 // Construct an ASN1.1 DER-encoded attestation record containing the values from sw_enforced and
 // tee_enforced.
-keymaster_error_t build_attestation_record(const AuthorizationSet& attestation_params,  //
-                                           AuthorizationSet sw_enforced,
-                                           AuthorizationSet tee_enforced,
-                                           const AttestationContext& context,
-                                           UniquePtr<uint8_t[]>* asn1_key_desc,
-                                           size_t* asn1_key_desc_len) {
+keymaster_error_t
+build_attestation_record(const AuthorizationSet& attestation_params, AuthorizationSet sw_enforced,
+                         AuthorizationSet tee_enforced, const AttestationRecordContext& context,
+                         UniquePtr<uint8_t[]>* asn1_key_desc, size_t* asn1_key_desc_len) {
     ASSERT_OR_RETURN_ERROR(asn1_key_desc && asn1_key_desc_len, KM_ERROR_UNEXPECTED_NULL_POINTER);
 
     UniquePtr<KM_KEY_DESCRIPTION, KM_KEY_DESCRIPTION_Delete> key_desc(KM_KEY_DESCRIPTION_new());
@@ -978,23 +978,26 @@ keymaster_error_t build_attestation_record(const AuthorizationSet& attestation_p
         root_of_trust = key_desc->tee_enforced->root_of_trust;
     }
 
-    keymaster_error_t error;
-    auto vb_params = context.GetVerifiedBootParams(&error);
+    keymaster_blob_t verified_boot_key;
+    keymaster_blob_t verified_boot_hash;
+    keymaster_verified_boot_t verified_boot_state;
+    bool device_locked;
+    keymaster_error_t error = context.GetVerifiedBootParams(&verified_boot_key, &verified_boot_hash,
+                                                            &verified_boot_state, &device_locked);
     if (error != KM_ERROR_OK) return error;
-    if (vb_params->verified_boot_key.data_length &&
-        !ASN1_OCTET_STRING_set(root_of_trust->verified_boot_key, vb_params->verified_boot_key.data,
-                               vb_params->verified_boot_key.data_length)) {
+    if (verified_boot_key.data_length &&
+        !ASN1_OCTET_STRING_set(root_of_trust->verified_boot_key, verified_boot_key.data,
+                               verified_boot_key.data_length)) {
         return TranslateLastOpenSslError();
     }
-    if (vb_params->verified_boot_hash.data_length &&
-        !ASN1_OCTET_STRING_set(root_of_trust->verified_boot_hash,
-                               vb_params->verified_boot_hash.data,
-                               vb_params->verified_boot_hash.data_length)) {
+    if (verified_boot_hash.data_length &&
+        !ASN1_OCTET_STRING_set(root_of_trust->verified_boot_hash, verified_boot_hash.data,
+                               verified_boot_hash.data_length)) {
         return TranslateLastOpenSslError();
     }
 
-    root_of_trust->device_locked = vb_params->device_locked ? 0xFF : 0x00;
-    if (!ASN1_ENUMERATED_set(root_of_trust->verified_boot_state, vb_params->verified_boot_state)) {
+    root_of_trust->device_locked = device_locked ? 0xFF : 0x00;
+    if (!ASN1_ENUMERATED_set(root_of_trust->verified_boot_state, verified_boot_state)) {
         return TranslateLastOpenSslError();
     }
 
@@ -1067,9 +1070,10 @@ keymaster_error_t build_attestation_record(const AuthorizationSet& attestation_p
         keymaster_blob_t application_id = {nullptr, 0};
         sw_enforced.GetTagValue(TAG_APPLICATION_ID, &application_id);
 
-        Buffer unique_id = context.GenerateUniqueId(
+        Buffer unique_id;
+        error = context.GenerateUniqueId(
             creation_datetime, application_id,
-            attestation_params.GetTagValue(TAG_RESET_SINCE_ID_ROTATION), &error);
+            attestation_params.GetTagValue(TAG_RESET_SINCE_ID_ROTATION), &unique_id);
         if (error != KM_ERROR_OK) return error;
 
         key_desc->unique_id = ASN1_OCTET_STRING_new();

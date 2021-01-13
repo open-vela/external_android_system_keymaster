@@ -42,19 +42,22 @@ class AndroidKeyMintDevice : public BnKeyMintDevice {
 
     ScopedAStatus addRngEntropy(const vector<uint8_t>& data) override;
 
-    ScopedAStatus generateKey(const vector<KeyParameter>& keyParams,
-                              KeyCreationResult* creationResult) override;
+    ScopedAStatus generateKey(const vector<KeyParameter>& keyParams, ByteArray* generatedKeyBlob,
+                              KeyCharacteristics* generatedKeyCharacteristics,
+                              vector<Certificate>* certChain) override;
 
     ScopedAStatus importKey(const vector<KeyParameter>& keyParams, KeyFormat keyFormat,
-                            const vector<uint8_t>& keyData,
-                            KeyCreationResult* creationResult) override;
+                            const vector<uint8_t>& keyData, ByteArray* importedKeyBlob,
+                            KeyCharacteristics* importedKeyCharacteristics,
+                            vector<Certificate>* certChain) override;
 
     ScopedAStatus importWrappedKey(const vector<uint8_t>& wrappedKeyData,
                                    const vector<uint8_t>& wrappingKeyBlob,
                                    const vector<uint8_t>& maskingKey,
                                    const vector<KeyParameter>& unwrappingParams,
                                    int64_t passwordSid, int64_t biometricSid,
-                                   KeyCreationResult* creationResult) override;
+                                   ByteArray* importedKeyBlob,
+                                   KeyCharacteristics* importedKeyCharacteristics) override;
 
     ScopedAStatus upgradeKey(const vector<uint8_t>& keyBlobToUpgrade,
                              const vector<KeyParameter>& upgradeParams,

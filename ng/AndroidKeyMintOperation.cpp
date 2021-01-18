@@ -20,7 +20,6 @@
 #include "AndroidKeyMintOperation.h"
 
 #include <aidl/android/hardware/security/keymint/ErrorCode.h>
-#include <aidl/android/hardware/security/secureclock/ISecureClock.h>
 
 #include <keymaster/android_keymaster.h>
 
@@ -34,7 +33,6 @@ using ::keymaster::FinishOperationRequest;
 using ::keymaster::FinishOperationResponse;
 using ::keymaster::UpdateOperationRequest;
 using ::keymaster::UpdateOperationResponse;
-using secureclock::TimeStampToken;
 using namespace km_utils;
 
 AndroidKeyMintOperation::AndroidKeyMintOperation(
@@ -51,7 +49,7 @@ AndroidKeyMintOperation::~AndroidKeyMintOperation() {
 ScopedAStatus AndroidKeyMintOperation::update(const optional<KeyParameterArray>& params,
                                               const optional<vector<uint8_t>>& input,
                                               const optional<HardwareAuthToken>& /* authToken */,
-                                              const optional<TimeStampToken>&
+                                              const optional<VerificationToken>&
                                               /* verificationToken */,
                                               optional<KeyParameterArray>* updatedParams,
                                               optional<ByteArray>* output, int32_t* inputConsumed) {
@@ -93,7 +91,7 @@ ScopedAStatus AndroidKeyMintOperation::finish(const optional<KeyParameterArray>&
                                               const optional<vector<uint8_t>>& input,
                                               const optional<vector<uint8_t>>& signature,
                                               const optional<HardwareAuthToken>& /* authToken */,
-                                              const optional<TimeStampToken>&
+                                              const optional<VerificationToken>&
                                               /* verificationToken */,
                                               optional<KeyParameterArray>* updatedParams,
                                               vector<uint8_t>* output) {

@@ -17,7 +17,6 @@
 #pragma once
 
 #include <aidl/android/hardware/security/keymint/BnKeyMintOperation.h>
-#include <aidl/android/hardware/security/secureclock/ISecureClock.h>
 
 #include <hardware/keymaster_defs.h>
 
@@ -28,7 +27,6 @@ class AndroidKeymaster;
 namespace aidl::android::hardware::security::keymint {
 
 using ::ndk::ScopedAStatus;
-using secureclock::TimeStampToken;
 using std::optional;
 using std::shared_ptr;
 using std::string;
@@ -43,7 +41,7 @@ class AndroidKeyMintOperation : public BnKeyMintOperation {
     ScopedAStatus update(const optional<KeyParameterArray>& params,
                          const optional<vector<uint8_t>>& input,
                          const optional<HardwareAuthToken>& authToken,
-                         const optional<TimeStampToken>& verificationToken,
+                         const optional<VerificationToken>& verificationToken,
                          optional<KeyParameterArray>* updatedParams, optional<ByteArray>* output,
                          int32_t* inputConsumed) override;
 
@@ -51,7 +49,7 @@ class AndroidKeyMintOperation : public BnKeyMintOperation {
                          const optional<vector<uint8_t>>& input,        //
                          const optional<vector<uint8_t>>& signature,    //
                          const optional<HardwareAuthToken>& authToken,  //
-                         const optional<TimeStampToken>& verificationToken,
+                         const optional<VerificationToken>& verificationToken,
                          optional<KeyParameterArray>* resultParams,  //
                          vector<uint8_t>* output) override;
 

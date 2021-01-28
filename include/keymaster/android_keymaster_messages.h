@@ -332,12 +332,15 @@ struct SupportedExportFormatsResponse : public SupportedResponse<keymaster_key_f
 struct GenerateKeyRequest : public KeymasterMessage {
     explicit GenerateKeyRequest(int32_t ver) : KeymasterMessage(ver) {}
 
-    size_t SerializedSize() const override;
-    uint8_t* Serialize(uint8_t* buf, const uint8_t* end) const override;
-    bool Deserialize(const uint8_t** buf_ptr, const uint8_t* end) override;
+    size_t SerializedSize() const override { return key_description.SerializedSize(); }
+    uint8_t* Serialize(uint8_t* buf, const uint8_t* end) const override {
+        return key_description.Serialize(buf, end);
+    }
+    bool Deserialize(const uint8_t** buf_ptr, const uint8_t* end) override {
+        return key_description.Deserialize(buf_ptr, end);
+    }
 
     AuthorizationSet key_description;
-    KeymasterKeyBlob attestation_signing_key_blob;
 };
 
 struct GenerateKeyResponse : public KeymasterResponse {
@@ -494,7 +497,13 @@ struct AddEntropyRequest : public KeymasterMessage {
 using AddEntropyResponse = EmptyKeymasterResponse;
 
 struct ImportKeyRequest : public KeymasterMessage {
-    explicit ImportKeyRequest(int32_t ver) : KeymasterMessage(ver) {}
+    explicit ImportKeyRequest(int32_t ver) : KeymasterMessage(ver), key_data(nullptr) {}
+    ~ImportKeyRequest() { delete[] key_data; }
+
+    void SetKeyMaterial(const void* key_material, size_t length);
+    void SetKeyMaterial(const keymaster_key_blob_t& blob) {
+        SetKeyMaterial(blob.key_material, blob.key_material_size);
+    }
 
     size_t SerializedSize() const override;
     uint8_t* Serialize(uint8_t* buf, const uint8_t* end) const override;
@@ -502,8 +511,8 @@ struct ImportKeyRequest : public KeymasterMessage {
 
     AuthorizationSet key_description;
     keymaster_key_format_t key_format;
-    KeymasterKeyBlob key_data;
-    KeymasterKeyBlob attestation_signing_key_blob;
+    uint8_t* key_data;
+    size_t key_data_length;
 };
 
 struct ImportKeyResponse : public KeymasterResponse {
@@ -796,7 +805,6 @@ struct ImportWrappedKeyRequest : public KeymasterMessage {
     AuthorizationSet additional_params;
     uint64_t password_sid;
     uint64_t biometric_sid;
-    KeymasterKeyBlob attestation_signing_key_blob;
 };
 
 struct ImportWrappedKeyResponse : public KeymasterResponse {

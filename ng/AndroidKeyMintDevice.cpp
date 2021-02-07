@@ -388,7 +388,6 @@ ScopedAStatus AndroidKeyMintDevice::earlyBootEnded() {
 }
 
 IKeyMintDevice* CreateKeyMintDevice(SecurityLevel securityLevel) {
-
     return ::new AndroidKeyMintDevice(securityLevel);
 }
 

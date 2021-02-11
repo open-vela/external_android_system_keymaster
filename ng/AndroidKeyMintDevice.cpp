@@ -32,7 +32,6 @@ namespace aidl::android::hardware::security::keymint {
 
 using namespace ::keymaster;
 using namespace km_utils;
-using secureclock::TimeStampToken;
 
 namespace {
 
@@ -42,11 +41,10 @@ vector<KeyCharacteristics> convertKeyCharacteristics(SecurityLevel keyMintSecuri
     KeyCharacteristics keyMintEnforced{keyMintSecurityLevel, {}};
 
     if (keyMintSecurityLevel != SecurityLevel::SOFTWARE) {
-        // We're pretending to be TRUSTED_ENVIRONMENT or STRONGBOX.
+        // We're pretending to be TRUSTED_ENVIRONMENT or STRONGBOX.  Only the entries in hw_enforced
+        // should be returned.
         keyMintEnforced.authorizations = kmParamSet2Aidl(hw_enforced);
-        // Put all the software authorizations in the keystore list.
-        KeyCharacteristics keystoreEnforced{SecurityLevel::KEYSTORE, kmParamSet2Aidl(sw_enforced)};
-        return {std::move(keyMintEnforced), std::move(keystoreEnforced)};
+        return {std::move(keyMintEnforced)};
     }
 
     KeyCharacteristics keystoreEnforced{SecurityLevel::KEYSTORE, {}};
@@ -197,7 +195,7 @@ ScopedAStatus AndroidKeyMintDevice::getHardwareInfo(KeyMintHardwareInfo* info) {
     info->securityLevel = securityLevel_;
     info->keyMintName = "FakeKeyMintDevice";
     info->keyMintAuthorName = "Google";
-    info->timestampTokenRequired = false;
+
     return ScopedAStatus::ok();
 }
 
@@ -367,27 +365,8 @@ ScopedAStatus AndroidKeyMintDevice::begin(KeyPurpose purpose, const vector<uint8
     return ScopedAStatus::ok();
 }
 
-ScopedAStatus AndroidKeyMintDevice::deviceLocked(
-    bool in_passwordOnly,
-    const std::optional<::aidl::android::hardware::security::secureclock::TimeStampToken>&
-        in_timestampToken) {
-    DeviceLockedRequest request(impl_->message_version());
-    request.passwordOnly = in_passwordOnly;
-    if (in_timestampToken.has_value()) {
-        request.token.challenge = in_timestampToken->challenge;
-        request.token.mac = {in_timestampToken->mac.data(), in_timestampToken->mac.size()};
-        request.token.timestamp = in_timestampToken->timestamp.milliSeconds;
-    }
-    DeviceLockedResponse response = impl_->DeviceLocked(request);
-    return kmError2ScopedAStatus(response.error);
-}
-
-ScopedAStatus AndroidKeyMintDevice::earlyBootEnded() {
-    EarlyBootEndedResponse response = impl_->EarlyBootEnded();
-    return kmError2ScopedAStatus(response.error);
-}
-
 IKeyMintDevice* CreateKeyMintDevice(SecurityLevel securityLevel) {
+
     return ::new AndroidKeyMintDevice(securityLevel);
 }
 

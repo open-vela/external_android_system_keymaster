@@ -236,6 +236,10 @@ void AndroidKeymaster::GenerateKey(const GenerateKeyRequest& request,
     if (!request.key_description.GetTagValue(TAG_ALGORITHM, &algorithm) ||
         !(factory = context_->GetKeyFactory(algorithm))) {
         response->error = KM_ERROR_UNSUPPORTED_ALGORITHM;
+    } else if (context_->enforcement_policy() &&
+               request.key_description.GetTagValue(TAG_EARLY_BOOT_ONLY) &&
+               !context_->enforcement_policy()->in_early_boot()) {
+        response->error = KM_ERROR_EARLY_BOOT_ENDED;
     } else {
         KeymasterKeyBlob key_blob;
         response->enforced.Clear();
@@ -351,16 +355,6 @@ void AndroidKeymaster::FinishOperation(const FinishOperationRequest& request,
 
     response->error = operation->Finish(request.additional_params, request.input, request.signature,
                                         &response->output_params, &response->output);
-    if (response->error != KM_ERROR_OK) {
-        operation_table_->Delete(request.op_handle);
-        return;
-    }
-
-    // Invalidate the single use key from secure storage after finish.
-    if (operation->hw_enforced().Contains(TAG_USAGE_COUNT_LIMIT, 1) &&
-        context_->secure_key_storage() != nullptr) {
-        response->error = context_->secure_key_storage()->DeleteKey(operation->key_id());
-    }
     operation_table_->Delete(request.op_handle);
 }
 

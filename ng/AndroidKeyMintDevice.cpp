@@ -42,11 +42,10 @@ vector<KeyCharacteristics> convertKeyCharacteristics(SecurityLevel keyMintSecuri
     KeyCharacteristics keyMintEnforced{keyMintSecurityLevel, {}};
 
     if (keyMintSecurityLevel != SecurityLevel::SOFTWARE) {
-        // We're pretending to be TRUSTED_ENVIRONMENT or STRONGBOX.
+        // We're pretending to be TRUSTED_ENVIRONMENT or STRONGBOX.  Only the entries in hw_enforced
+        // should be returned.
         keyMintEnforced.authorizations = kmParamSet2Aidl(hw_enforced);
-        // Put all the software authorizations in the keystore list.
-        KeyCharacteristics keystoreEnforced{SecurityLevel::KEYSTORE, kmParamSet2Aidl(sw_enforced)};
-        return {std::move(keyMintEnforced), std::move(keystoreEnforced)};
+        return {std::move(keyMintEnforced)};
     }
 
     KeyCharacteristics keystoreEnforced{SecurityLevel::KEYSTORE, {}};
@@ -405,6 +404,7 @@ ScopedAStatus AndroidKeyMintDevice::earlyBootEnded() {
 }
 
 IKeyMintDevice* CreateKeyMintDevice(SecurityLevel securityLevel) {
+
     return ::new AndroidKeyMintDevice(securityLevel);
 }
 

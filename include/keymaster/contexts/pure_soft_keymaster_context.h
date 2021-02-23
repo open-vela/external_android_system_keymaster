@@ -25,7 +25,6 @@
 #include <keymaster/km_openssl/attestation_record.h>
 #include <keymaster/km_openssl/soft_keymaster_enforcement.h>
 #include <keymaster/km_openssl/software_random_source.h>
-#include <keymaster/pure_soft_secure_key_storage.h>
 #include <keymaster/random_source.h>
 #include <keymaster/soft_key_factory.h>
 
@@ -83,8 +82,6 @@ class PureSoftKeymasterContext : public KeymasterContext,
         return &soft_keymaster_enforcement_;
     }
 
-    SecureKeyStorage* secure_key_storage() override { return pure_soft_secure_key_storage_.get(); }
-
     /*********************************************************************************************
      * Implement SoftwareKeyBlobMaker
      */
@@ -117,7 +114,6 @@ class PureSoftKeymasterContext : public KeymasterContext,
     uint32_t os_patchlevel_;
     SoftKeymasterEnforcement soft_keymaster_enforcement_;
     const keymaster_security_level_t security_level_;
-    std::unique_ptr<SecureKeyStorage> pure_soft_secure_key_storage_;
 };
 
 }  // namespace keymaster

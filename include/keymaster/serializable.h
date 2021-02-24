@@ -16,14 +16,15 @@
 
 #pragma once
 
-#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <keymaster/UniquePtr.h>
-#include <keymaster/mem.h>
 #include <keymaster/new.h>
+#include <stddef.h>
+// #include <new>
+
+#include <keymaster/UniquePtr.h>
 
 namespace keymaster {
 
@@ -201,20 +202,6 @@ class Buffer : public Serializable {
     Buffer() : buffer_(nullptr), buffer_size_(0), read_position_(0), write_position_(0) {}
     explicit Buffer(size_t size) : buffer_(nullptr) { Reinitialize(size); }
     Buffer(const void* buf, size_t size) : buffer_(nullptr) { Reinitialize(buf, size); }
-    Buffer(Buffer&& b) { *this = move(b); }
-    Buffer(const Buffer&) = delete;
-
-    void operator=(Buffer&& other) {
-        buffer_ = move(other.buffer_);
-        buffer_size_ = other.buffer_size_;
-        other.buffer_size_ = 0;
-        read_position_ = other.read_position_;
-        other.read_position_ = 0;
-        write_position_ = other.write_position_;
-        other.write_position_ = 0;
-    }
-
-    void operator=(const Buffer& other) = delete;
 
     // Grow the buffer so that at least \p size bytes can be written.
     bool reserve(size_t size);
@@ -260,6 +247,10 @@ class Buffer : public Serializable {
     bool Deserialize(const uint8_t** buf_ptr, const uint8_t* end);
 
   private:
+    // Disallow copy construction and assignment.
+    void operator=(const Buffer& other);
+    Buffer(const Buffer&);
+
     UniquePtr<uint8_t[]> buffer_;
     size_t buffer_size_;
     size_t read_position_;

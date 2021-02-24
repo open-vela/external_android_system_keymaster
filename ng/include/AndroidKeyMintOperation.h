@@ -40,19 +40,19 @@ class AndroidKeyMintOperation : public BnKeyMintOperation {
                                      keymaster_operation_handle_t opHandle);
     virtual ~AndroidKeyMintOperation();
 
-    ScopedAStatus updateAad(const vector<uint8_t>& input,
-                            const optional<HardwareAuthToken>& authToken,
-                            const optional<TimeStampToken>& timestampToken) override;
-
-    ScopedAStatus update(const vector<uint8_t>& input, const optional<HardwareAuthToken>& authToken,
+    ScopedAStatus update(const optional<KeyParameterArray>& params,
+                         const optional<vector<uint8_t>>& input,
+                         const optional<HardwareAuthToken>& authToken,
                          const optional<TimeStampToken>& timestampToken,
-                         vector<uint8_t>* output) override;
+                         optional<KeyParameterArray>* updatedParams, optional<ByteArray>* output,
+                         int32_t* inputConsumed) override;
 
-    ScopedAStatus finish(const optional<vector<uint8_t>>& input,        //
+    ScopedAStatus finish(const optional<KeyParameterArray>& params,     //
+                         const optional<vector<uint8_t>>& input,        //
                          const optional<vector<uint8_t>>& signature,    //
                          const optional<HardwareAuthToken>& authToken,  //
                          const optional<TimeStampToken>& timestampToken,
-                         const optional<vector<uint8_t>>& confirmationToken,
+                         optional<KeyParameterArray>* resultParams,  //
                          vector<uint8_t>* output) override;
 
     ScopedAStatus abort() override;

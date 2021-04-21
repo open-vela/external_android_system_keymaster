@@ -360,8 +360,7 @@ ScopedAStatus AndroidKeyMintDevice::destroyAttestationIds() {
 
 ScopedAStatus AndroidKeyMintDevice::begin(KeyPurpose purpose, const vector<uint8_t>& keyBlob,
                                           const vector<KeyParameter>& params,
-                                          const optional<HardwareAuthToken>& authToken,
-                                          BeginResult* result) {
+                                          const HardwareAuthToken& authToken, BeginResult* result) {
 
     BeginOperationRequest request(impl_->message_version());
     request.purpose = legacy_enum_conversion(purpose);
@@ -407,6 +406,11 @@ ScopedAStatus AndroidKeyMintDevice::earlyBootEnded() {
 ScopedAStatus
 AndroidKeyMintDevice::convertStorageKeyToEphemeral(const std::vector<uint8_t>& /* storageKeyBlob */,
                                                    std::vector<uint8_t>* /* ephemeralKeyBlob */) {
+    return kmError2ScopedAStatus(KM_ERROR_UNIMPLEMENTED);
+}
+
+ScopedAStatus AndroidKeyMintDevice::performOperation(const vector<uint8_t>& /* request */,
+                                                     vector<uint8_t>* /* response */) {
     return kmError2ScopedAStatus(KM_ERROR_UNIMPLEMENTED);
 }
 

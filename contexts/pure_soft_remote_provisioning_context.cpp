@@ -16,7 +16,6 @@
 
 #include <keymaster/contexts/pure_soft_remote_provisioning_context.h>
 
-#include <algorithm>
 #include <assert.h>
 
 #include <keymaster/cppcose/cppcose.h>
@@ -83,10 +82,7 @@ PureSoftRemoteProvisioningContext::GenerateBcc() const {
     std::vector<uint8_t> privKey(ED25519_PRIVATE_KEY_LEN);
     std::vector<uint8_t> pubKey(ED25519_PUBLIC_KEY_LEN);
 
-    uint8_t seed[32];  // Length is hard-coded in the BoringCrypto API
-    auto seed_vector = DeriveBytesFromHbk("Device Key Seed", sizeof(seed));
-    std::copy(seed_vector.begin(), seed_vector.end(), seed);
-    ED25519_keypair_from_seed(pubKey.data(), privKey.data(), seed);
+    ED25519_keypair(pubKey.data(), privKey.data());
 
     auto coseKey = cppbor::Map()
                        .add(CoseKey::KEY_TYPE, OCTET_KEY_PAIR)

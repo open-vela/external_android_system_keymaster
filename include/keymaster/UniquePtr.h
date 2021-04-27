@@ -73,7 +73,8 @@ template <typename T, typename D = DefaultDelete<T>> class UniquePtr {
     T* operator->() const { return mPtr; }
     T* get() const { return mPtr; }
 
-    explicit operator bool() const { return mPtr != nullptr; }
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    operator bool() const { return mPtr != nullptr; }
 
     // Returns the raw pointer and hands over ownership to the caller.
     // The pointer will not be deleted by UniquePtr.
@@ -134,7 +135,8 @@ template <typename T, typename D> class UniquePtr<T[], D> {
         return result;
     }
 
-    explicit operator bool() const { return mPtr != nullptr; }
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    operator bool() const { return mPtr != nullptr; }
 
     void reset(T* ptr = nullptr) {
         if (ptr != mPtr) {

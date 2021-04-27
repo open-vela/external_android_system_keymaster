@@ -42,7 +42,7 @@ struct AttestKeyInfo {
 
     void operator=(const AttestKeyInfo&) = delete;
 
-    explicit operator bool() const { return signing_key.get() != nullptr; }
+    operator bool() const { return signing_key; }
 
     EVP_PKEY_Ptr signing_key;
     const KeymasterBlob* issuer_subject;

@@ -18,6 +18,8 @@
 
 #include <assert.h>
 
+#include <keymaster/new.h>
+
 #include <keymaster/android_keymaster_utils.h>
 
 namespace keymaster {

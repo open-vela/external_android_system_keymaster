@@ -23,6 +23,7 @@
 
 #include <keymaster/UniquePtr.h>
 #include <keymaster/mem.h>
+#include <keymaster/new.h>
 
 namespace keymaster {
 

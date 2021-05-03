@@ -23,6 +23,7 @@
 
 #include <keymaster/UniquePtr.h>
 #include <keymaster/mem.h>
+#include <keymaster/new.h>
 #include <keymaster/serializable.h>
 
 #ifndef __has_cpp_attribute

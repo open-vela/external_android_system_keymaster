@@ -59,7 +59,7 @@ validateAndExtractEekPubAndId(bool testMode, const KeymasterBlob& endpointEncryp
     std::vector<uint8_t> lastPubKey;
     for (size_t i = 0; i < certArr->size(); ++i) {
         auto cosePubKey =
-            verifyAndParseCoseSign1(certArr->get(i)->asArray(), lastPubKey, {} /* AAD */);
+            verifyAndParseCoseSign1(testMode, certArr->get(i)->asArray(), lastPubKey, {} /* AAD */);
         if (!cosePubKey) {
             LOG_E("Failed to validate EEK chain: %s", cosePubKey.moveMessage().c_str());
             return kStatusInvalidEek;
@@ -89,7 +89,7 @@ StatusOr<std::vector<uint8_t> /* pubkeys */>
 validateAndExtractPubkeys(bool testMode, uint32_t numKeys, KeymasterBlob* keysToSign,
                           cppcose::HmacSha256Function macFunction) {
     auto pubKeysToMac = cppbor::Array();
-    for (int i = 0; i < numKeys; i++) {
+    for (size_t i = 0; i < numKeys; i++) {
         auto [macedKeyItem, _, coseMacErrMsg] =
             cppbor::parse(keysToSign[i].begin(), keysToSign[i].end());
         if (!macedKeyItem || !macedKeyItem->asArray() ||

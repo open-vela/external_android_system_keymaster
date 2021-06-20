@@ -170,7 +170,7 @@ ErrMsgOr<cppbor::Array> constructCoseSign1(const bytevec& key, const bytevec& pa
     return constructCoseSign1(key, {} /* protectedParams */, payload, aad);
 }
 
-ErrMsgOr<bytevec> verifyAndParseCoseSign1(const cppbor::Array* coseSign1,
+ErrMsgOr<bytevec> verifyAndParseCoseSign1(bool ignoreSignature, const cppbor::Array* coseSign1,
                                           const bytevec& signingCoseKey, const bytevec& aad) {
     if (!coseSign1 || coseSign1->size() != kCoseSign1EntryCount) {
         return "Invalid COSE_Sign1";
@@ -197,23 +197,25 @@ ErrMsgOr<bytevec> verifyAndParseCoseSign1(const cppbor::Array* coseSign1,
         return "Unsupported signature algorithm";
     }
 
-    const cppbor::Bstr* signature = coseSign1->get(kCoseSign1Signature)->asBstr();
-    if (!signature || signature->value().empty()) {
-        return "Missing signature input";
-    }
+    if (!ignoreSignature) {
+        const cppbor::Bstr* signature = coseSign1->get(kCoseSign1Signature)->asBstr();
+        if (!signature || signature->value().empty()) {
+            return "Missing signature input";
+        }
 
-    bool selfSigned = signingCoseKey.empty();
-    auto key = CoseKey::parseEd25519(selfSigned ? payload->value() : signingCoseKey);
-    if (!key || key->getBstrValue(CoseKey::PUBKEY_X)->empty()) {
-        return "Bad signing key: " + key.moveMessage();
-    }
+        bool selfSigned = signingCoseKey.empty();
+        auto key = CoseKey::parseEd25519(selfSigned ? payload->value() : signingCoseKey);
+        if (!key || key->getBstrValue(CoseKey::PUBKEY_X)->empty()) {
+            return "Bad signing key: " + key.moveMessage();
+        }
 
-    bytevec signatureInput =
-        cppbor::Array().add("Signature1").add(*protectedParams).add(aad).add(*payload).encode();
+        bytevec signatureInput =
+            cppbor::Array().add("Signature1").add(*protectedParams).add(aad).add(*payload).encode();
 
-    if (!ED25519_verify(signatureInput.data(), signatureInput.size(), signature->value().data(),
-                        key->getBstrValue(CoseKey::PUBKEY_X)->data())) {
-        return "Signature verification failed";
+        if (!ED25519_verify(signatureInput.data(), signatureInput.size(), signature->value().data(),
+                            key->getBstrValue(CoseKey::PUBKEY_X)->data())) {
+            return "Signature verification failed";
+        }
     }
 
     return payload->value();
@@ -417,7 +419,7 @@ ErrMsgOr<bytevec> aesGcmEncrypt(const bytevec& key, const bytevec& nonce, const 
                           plaintext.size())) {
         return "Failed to encrypt plaintext";
     }
-    assert(plaintext.size() == outlen);
+    assert(plaintext.size() == static_cast<uint64_t>(outlen));
 
     if (!EVP_CipherFinal_ex(ctx->get(), ciphertext.data() + outlen, &outlen)) {
         return "Failed to finalize encryption";
@@ -445,7 +447,7 @@ ErrMsgOr<bytevec> aesGcmDecrypt(const bytevec& key, const bytevec& nonce, const 
                           ciphertextWithTag.size() - kAesGcmTagSize)) {
         return "Failed to decrypt plaintext";
     }
-    assert(plaintext.size() == outlen);
+    assert(plaintext.size() == static_cast<uint64_t>(outlen));
 
     bytevec tag(ciphertextWithTag.end() - kAesGcmTagSize, ciphertextWithTag.end());
     if (!EVP_CIPHER_CTX_ctrl(ctx->get(), EVP_CTRL_GCM_SET_TAG, kAesGcmTagSize, tag.data())) {

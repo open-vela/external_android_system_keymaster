@@ -66,10 +66,7 @@ PureSoftKeymasterContext::PureSoftKeymasterContext(KmVersion version,
     if (security_level != KM_SECURITY_LEVEL_SOFTWARE) {
         pure_soft_secure_key_storage_ = std::make_unique<PureSoftSecureKeyStorage>(64);
     }
-    if (version >= KmVersion::KEYMINT_1) {
-        pure_soft_remote_provisioning_context_ =
-            std::make_unique<PureSoftRemoteProvisioningContext>();
-    }
+    pure_soft_remote_provisioning_context_ = std::make_unique<PureSoftRemoteProvisioningContext>();
 }
 
 PureSoftKeymasterContext::~PureSoftKeymasterContext() {}

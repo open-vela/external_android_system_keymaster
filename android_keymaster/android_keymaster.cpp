@@ -424,13 +424,7 @@ void AndroidKeymaster::GenerateCsr(const GenerateCsrRequest& request,
         std::tie(devicePrivKey, bcc) = rem_prov_ctx->GenerateBcc();
     } else {
         devicePrivKey = rem_prov_ctx->devicePrivKey_;
-        auto clone = rem_prov_ctx->bcc_.clone();
-        if (!clone->asArray()) {
-            LOG_E("The BCC is not an array.", 0);
-            response->error = static_cast<keymaster_error_t>(kStatusFailed);
-            return;
-        }
-        bcc = std::move(*clone->asArray());
+        bcc = rem_prov_ctx->bcc_.clone();
     }
     std::unique_ptr<cppbor::Map> device_info_map = rem_prov_ctx->CreateDeviceInfo();
     std::vector<uint8_t> device_info = device_info_map->encode();
@@ -853,27 +847,17 @@ void AndroidKeymaster::ImportWrappedKey(const ImportWrappedKeyRequest& request,
 }
 
 EarlyBootEndedResponse AndroidKeymaster::EarlyBootEnded() {
-    EarlyBootEndedResponse response(message_version());
-    response.error = KM_ERROR_UNIMPLEMENTED;
-
     if (context_->enforcement_policy()) {
         context_->enforcement_policy()->early_boot_ended();
-        response.error = KM_ERROR_OK;
     }
-
-    return response;
+    return EarlyBootEndedResponse(message_version());
 }
 
 DeviceLockedResponse AndroidKeymaster::DeviceLocked(const DeviceLockedRequest& request) {
-    DeviceLockedResponse response(message_version());
-    response.error = KM_ERROR_UNIMPLEMENTED;
-
     if (context_->enforcement_policy()) {
         context_->enforcement_policy()->device_locked(request.passwordOnly);
-        response.error = KM_ERROR_OK;
     }
-
-    return response;
+    return DeviceLockedResponse(message_version());
 }
 
 }  // namespace keymaster

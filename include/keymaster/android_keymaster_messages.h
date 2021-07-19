@@ -401,7 +401,7 @@ struct GenerateCsrRequest : public KeymasterMessage {
 
     bool test_mode = false;
     size_t num_keys = 0;
-    KeymasterBlob* keys_to_sign_array = nullptr;
+    KeymasterBlob* keys_to_sign_array;
     KeymasterBlob endpoint_enc_cert_chain;
     KeymasterBlob challenge;
 };

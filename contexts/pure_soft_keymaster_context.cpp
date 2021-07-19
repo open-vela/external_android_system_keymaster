@@ -184,9 +184,8 @@ keymaster_error_t PureSoftKeymasterContext::CreateKeyBlob(const AuthorizationSet
         }
     }
 
-    keymaster_error_t error =
-        SetKeyBlobAuthorizations(key_description, origin, os_version_, os_patchlevel_, hw_enforced,
-                                 sw_enforced, GetKmVersion());
+    keymaster_error_t error = SetKeyBlobAuthorizations(key_description, origin, os_version_,
+                                                       os_patchlevel_, hw_enforced, sw_enforced);
     if (error != KM_ERROR_OK) return error;
     error =
         ExtendKeyBlobAuthorizations(hw_enforced, sw_enforced, vendor_patchlevel_, boot_patchlevel_);

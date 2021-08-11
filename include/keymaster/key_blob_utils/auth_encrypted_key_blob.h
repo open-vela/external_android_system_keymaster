@@ -20,7 +20,6 @@
 
 #include <keymaster/android_keymaster_utils.h>
 #include <keymaster/authorization_set.h>
-#include <keymaster/keymaster_utils.h>
 
 namespace keymaster {
 
@@ -61,31 +60,31 @@ struct DeserializedKey : private MoveOnly {
  * Encrypt the provided plaintext with format `format`, using the provided authorization lists and
  * master_key to derive the key encryption key.
  */
-KmErrorOr<EncryptedKey> EncryptKey(const KeymasterKeyBlob& plaintext,
-                                   AuthEncryptedBlobFormat format,
-                                   const AuthorizationSet& hw_enforced,
-                                   const AuthorizationSet& sw_enforced,
-                                   const AuthorizationSet& hidden,
-                                   const KeymasterKeyBlob& master_key, const RandomSource& random);
+EncryptedKey EncryptKey(const KeymasterKeyBlob& plaintext, AuthEncryptedBlobFormat format,
+                        const AuthorizationSet& hw_enforced, const AuthorizationSet& sw_enforced,
+                        const AuthorizationSet& hidden, const KeymasterKeyBlob& master_key,
+                        const RandomSource& random, keymaster_error_t* error);
 
 /**
  * Serialize `encrypted_key` (which contains necessary nonce & tag information),
  * along with the associated authorization data into a blob.
  */
-KmErrorOr<KeymasterKeyBlob> SerializeAuthEncryptedBlob(const EncryptedKey& encrypted_key,
-                                                       const AuthorizationSet& hw_enforced,
-                                                       const AuthorizationSet& sw_enforced);
+KeymasterKeyBlob SerializeAuthEncryptedBlob(const EncryptedKey& encrypted_key,
+                                            const AuthorizationSet& hw_enforced,
+                                            const AuthorizationSet& sw_enforced,
+                                            keymaster_error_t* error);
 
 /**
  * Deserialize a blob, retrieving the key ciphertext, decryption parameters and associated
  * authorization lists.
  */
-KmErrorOr<DeserializedKey> DeserializeAuthEncryptedBlob(const KeymasterKeyBlob& key_blob);
+DeserializedKey DeserializeAuthEncryptedBlob(const KeymasterKeyBlob& key_blob,
+                                             keymaster_error_t* error);
 
 /**
  * Decrypt key material from the Deserialized data in `key'.
  */
-KmErrorOr<KeymasterKeyBlob> DecryptKey(const DeserializedKey& key, const AuthorizationSet& hidden,
-                                       const KeymasterKeyBlob& master_key);
+KeymasterKeyBlob DecryptKey(const DeserializedKey& key, const AuthorizationSet& hidden,
+                            const KeymasterKeyBlob& master_key, keymaster_error_t* error);
 
 }  // namespace keymaster

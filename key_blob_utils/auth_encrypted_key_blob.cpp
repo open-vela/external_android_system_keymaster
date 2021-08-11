@@ -31,8 +31,7 @@ namespace keymaster {
 
 namespace {
 
-constexpr uint8_t kAesGcmDescriptor1[] = "AES-256-GCM-HKDF-SHA-256, version 1";
-constexpr uint8_t kAesGcmDescriptor2[] = "AES-256-GCM-HKDF-SHA-256, version 2";
+constexpr uint8_t kAesGcmDescriptor[] = "AES-256-GCM-HKDF-SHA-256, version 1";
 constexpr size_t kAesGcmNonceLength = 12;
 constexpr size_t kAesGcmTagLength = 16;
 constexpr size_t kAes256KeyLength = 256 / 8;
@@ -46,38 +45,19 @@ KmErrorOr<Buffer> generate_nonce(const RandomSource& random, size_t size) {
     return nonce;
 }
 
-KmErrorOr<Buffer> BuildDerivationInfo(const AuthEncryptedBlobFormat format,  //
-                                      const AuthorizationSet& hw_enforced,   //
-                                      const AuthorizationSet& sw_enforced,   //
-                                      const AuthorizationSet& hidden,
-                                      const SecureDeletionData& secure_deletion_data) {
-    bool use_sdd = (format == AES_GCM_WITH_SECURE_DELETION);
-
-    size_t info_len =
-        hidden.SerializedSize() + hw_enforced.SerializedSize() + sw_enforced.SerializedSize();
-    if (use_sdd) {
-        info_len += sizeof(kAesGcmDescriptor2) +
-                    secure_deletion_data.factory_reset_secret.SerializedSize() +
-                    secure_deletion_data.secure_deletion_secret.SerializedSize() +
-                    sizeof(secure_deletion_data.key_slot);
-    } else {
-        info_len += sizeof(kAesGcmDescriptor1);
-    }
-
+KmErrorOr<Buffer> BuildDerivationInfo(const AuthorizationSet& hw_enforced,  //
+                                      const AuthorizationSet& sw_enforced,  //
+                                      const AuthorizationSet& hidden) {
+    size_t info_len = sizeof(kAesGcmDescriptor) + hidden.SerializedSize() +
+                      hw_enforced.SerializedSize() + sw_enforced.SerializedSize();
     Buffer info(info_len);
-    info.write(use_sdd ? kAesGcmDescriptor2 : kAesGcmDescriptor1);
+
+    info.write(kAesGcmDescriptor, sizeof(kAesGcmDescriptor));
     uint8_t* buf = info.peek_write();
     const uint8_t* end = info.peek_write() + info.available_write();
     buf = hidden.Serialize(buf, end);
     buf = hw_enforced.Serialize(buf, end);
     buf = sw_enforced.Serialize(buf, end);
-
-    if (use_sdd) {
-        buf = secure_deletion_data.factory_reset_secret.Serialize(buf, end);
-        buf = secure_deletion_data.secure_deletion_secret.Serialize(buf, end);
-        static_assert(std::is_same_v<decltype(secure_deletion_data.key_slot), uint32_t>);
-        buf = append_uint32_to_buf(buf, end, secure_deletion_data.key_slot);
-    }
 
     if (!buf || buf != end || !info.advance_write(buf - info.peek_write())) {
         LOG_S("Buffer management error", 0);
@@ -87,11 +67,9 @@ KmErrorOr<Buffer> BuildDerivationInfo(const AuthEncryptedBlobFormat format,  //
     return info;
 }
 
-KmErrorOr<Buffer> DeriveAesGcmKeyEncryptionKey(const AuthEncryptedBlobFormat format,            //
-                                               const AuthorizationSet& hw_enforced,             //
-                                               const AuthorizationSet& sw_enforced,             //
-                                               const AuthorizationSet& hidden,                  //
-                                               const SecureDeletionData& secure_deletion_data,  //
+KmErrorOr<Buffer> DeriveAesGcmKeyEncryptionKey(const AuthorizationSet& hw_enforced,  //
+                                               const AuthorizationSet& sw_enforced,  //
+                                               const AuthorizationSet& hidden,       //
                                                const KeymasterKeyBlob& master_key) {
     Buffer prk(EVP_MAX_MD_SIZE);
     size_t out_len = EVP_MAX_MD_SIZE;
@@ -100,8 +78,7 @@ KmErrorOr<Buffer> DeriveAesGcmKeyEncryptionKey(const AuthEncryptedBlobFormat for
         return TranslateLastOpenSslError();
     }
 
-    KmErrorOr<Buffer> info =
-        BuildDerivationInfo(format, hw_enforced, sw_enforced, hidden, secure_deletion_data);
+    KmErrorOr<Buffer> info = BuildDerivationInfo(hw_enforced, sw_enforced, hidden);
     if (!info) return info.error();
 
     if (!prk.advance_write(out_len) || !prk.available_read() || !info->available_read()) {
@@ -119,16 +96,15 @@ KmErrorOr<Buffer> DeriveAesGcmKeyEncryptionKey(const AuthEncryptedBlobFormat for
     return keyEncryptionKey;
 }
 
-KmErrorOr<EncryptedKey> AesGcmEncryptKey(const AuthorizationSet& hw_enforced,             //
-                                         const AuthorizationSet& sw_enforced,             //
-                                         const AuthorizationSet& hidden,                  //
-                                         const SecureDeletionData& secure_deletion_data,  //
-                                         const KeymasterKeyBlob& master_key,              //
-                                         const KeymasterKeyBlob& plaintext,               //
-                                         const AuthEncryptedBlobFormat format,            //
+KmErrorOr<EncryptedKey> AesGcmEncryptKey(const AuthorizationSet& hw_enforced,   //
+                                         const AuthorizationSet& sw_enforced,   //
+                                         const AuthorizationSet& hidden,        //
+                                         const KeymasterKeyBlob& master_key,    //
+                                         const KeymasterKeyBlob& plaintext,     //
+                                         const AuthEncryptedBlobFormat format,  //
                                          Buffer nonce) {
-    KmErrorOr<Buffer> kek = DeriveAesGcmKeyEncryptionKey(format, hw_enforced, sw_enforced, hidden,
-                                                         secure_deletion_data, master_key);
+    KmErrorOr<Buffer> kek =
+        DeriveAesGcmKeyEncryptionKey(hw_enforced, sw_enforced, hidden, master_key);
     if (!kek) return kek.error();
 
     bssl::UniquePtr<EVP_CIPHER_CTX> ctx(EVP_CIPHER_CTX_new());
@@ -163,11 +139,9 @@ KmErrorOr<EncryptedKey> AesGcmEncryptKey(const AuthorizationSet& hw_enforced,   
 
 KmErrorOr<KeymasterKeyBlob> AesGcmDecryptKey(const DeserializedKey& key,
                                              const AuthorizationSet& hidden,
-                                             const SecureDeletionData& secure_deletion_data,
                                              const KeymasterKeyBlob& master_key) {
     KmErrorOr<Buffer> kek =
-        DeriveAesGcmKeyEncryptionKey(key.encrypted_key.format, key.hw_enforced, key.sw_enforced,
-                                     hidden, secure_deletion_data, master_key);
+        DeriveAesGcmKeyEncryptionKey(key.hw_enforced, key.sw_enforced, hidden, master_key);
     if (!kek) return kek.error();
 
     bssl::UniquePtr<EVP_CIPHER_CTX> ctx(EVP_CIPHER_CTX_new());
@@ -202,14 +176,10 @@ KmErrorOr<KeymasterKeyBlob> AesGcmDecryptKey(const DeserializedKey& key,
 
 KmErrorOr<KeymasterKeyBlob> SerializeAuthEncryptedBlob(const EncryptedKey& encrypted_key,
                                                        const AuthorizationSet& hw_enforced,
-                                                       const AuthorizationSet& sw_enforced,
-                                                       uint32_t key_slot) {
-    bool use_key_slot = (encrypted_key.format == AES_GCM_WITH_SECURE_DELETION);
-
+                                                       const AuthorizationSet& sw_enforced) {
     size_t size = 1 /* version byte */ + encrypted_key.nonce.SerializedSize() +
                   encrypted_key.ciphertext.SerializedSize() + encrypted_key.tag.SerializedSize() +
                   hw_enforced.SerializedSize() + sw_enforced.SerializedSize();
-    if (use_key_slot) size += sizeof(key_slot);
 
     KeymasterKeyBlob retval;
     if (!retval.Reset(size)) return KM_ERROR_MEMORY_ALLOCATION_FAILED;
@@ -223,8 +193,6 @@ KmErrorOr<KeymasterKeyBlob> SerializeAuthEncryptedBlob(const EncryptedKey& encry
     buf = encrypted_key.tag.Serialize(buf, end);
     buf = hw_enforced.Serialize(buf, end);
     buf = sw_enforced.Serialize(buf, end);
-    if (use_key_slot) buf = append_uint32_to_buf(buf, end, key_slot);
-
     if (buf != retval.end()) return KM_ERROR_UNKNOWN_ERROR;
 
     return retval;
@@ -239,18 +207,13 @@ KmErrorOr<DeserializedKey> DeserializeAuthEncryptedBlob(const KeymasterKeyBlob& 
 
     if (end <= *buf_ptr) return KM_ERROR_INVALID_KEY_BLOB;
 
-    DeserializedKey retval{};
+    DeserializedKey retval;
     retval.encrypted_key.format = static_cast<AuthEncryptedBlobFormat>(*(*buf_ptr)++);
     if (!retval.encrypted_key.nonce.Deserialize(buf_ptr, end) ||       //
         !retval.encrypted_key.ciphertext.Deserialize(buf_ptr, end) ||  //
         !retval.encrypted_key.tag.Deserialize(buf_ptr, end) ||         //
         !retval.hw_enforced.Deserialize(buf_ptr, end) ||               //
         !retval.sw_enforced.Deserialize(buf_ptr, end)) {
-        return KM_ERROR_INVALID_KEY_BLOB;
-    }
-
-    if (retval.encrypted_key.format == AES_GCM_WITH_SECURE_DELETION &&
-        !copy_uint32_from_buf(buf_ptr, end, &retval.key_slot)) {
         return KM_ERROR_INVALID_KEY_BLOB;
     }
 
@@ -265,7 +228,6 @@ KmErrorOr<DeserializedKey> DeserializeAuthEncryptedBlob(const KeymasterKeyBlob& 
         return retval;
 
     case AES_GCM_WITH_SW_ENFORCED:
-    case AES_GCM_WITH_SECURE_DELETION:
         if (retval.encrypted_key.nonce.available_read() != kAesGcmNonceLength ||
             retval.encrypted_key.tag.available_read() != kAesGcmTagLength) {
             return KM_ERROR_INVALID_KEY_BLOB;
@@ -277,11 +239,12 @@ KmErrorOr<DeserializedKey> DeserializeAuthEncryptedBlob(const KeymasterKeyBlob& 
     return KM_ERROR_INVALID_KEY_BLOB;
 }
 
-KmErrorOr<EncryptedKey>
-EncryptKey(const KeymasterKeyBlob& plaintext, AuthEncryptedBlobFormat format,
-           const AuthorizationSet& hw_enforced, const AuthorizationSet& sw_enforced,
-           const AuthorizationSet& hidden, const SecureDeletionData& secure_deletion_data,
-           const KeymasterKeyBlob& master_key, const RandomSource& random) {
+KmErrorOr<EncryptedKey> EncryptKey(const KeymasterKeyBlob& plaintext,
+                                   AuthEncryptedBlobFormat format,
+                                   const AuthorizationSet& hw_enforced,
+                                   const AuthorizationSet& sw_enforced,
+                                   const AuthorizationSet& hidden,
+                                   const KeymasterKeyBlob& master_key, const RandomSource& random) {
     switch (format) {
     case AES_OCB: {
         EncryptedKey retval;
@@ -297,12 +260,11 @@ EncryptKey(const KeymasterKeyBlob& plaintext, AuthEncryptedBlobFormat format,
         return retval;
     }
 
-    case AES_GCM_WITH_SW_ENFORCED:
-    case AES_GCM_WITH_SECURE_DELETION: {
+    case AES_GCM_WITH_SW_ENFORCED: {
         auto nonce = generate_nonce(random, kAesGcmNonceLength);
         if (!nonce) return nonce.error();
-        return AesGcmEncryptKey(hw_enforced, sw_enforced, hidden, secure_deletion_data, master_key,
-                                plaintext, format, std::move(*nonce));
+        return AesGcmEncryptKey(hw_enforced, sw_enforced, hidden, master_key, plaintext, format,
+                                std::move(*nonce));
     }
     }
 
@@ -311,7 +273,6 @@ EncryptKey(const KeymasterKeyBlob& plaintext, AuthEncryptedBlobFormat format,
 }
 
 KmErrorOr<KeymasterKeyBlob> DecryptKey(const DeserializedKey& key, const AuthorizationSet& hidden,
-                                       const SecureDeletionData& secure_deletion_data,
                                        const KeymasterKeyBlob& master_key) {
     KeymasterKeyBlob retval;
     switch (key.encrypted_key.format) {
@@ -324,8 +285,7 @@ KmErrorOr<KeymasterKeyBlob> DecryptKey(const DeserializedKey& key, const Authori
     }
 
     case AES_GCM_WITH_SW_ENFORCED:
-    case AES_GCM_WITH_SECURE_DELETION:
-        return AesGcmDecryptKey(key, hidden, secure_deletion_data, master_key);
+        return AesGcmDecryptKey(key, hidden, master_key);
     }
 
     LOG_E("Invalid key blob format %d", key.encrypted_key.format);

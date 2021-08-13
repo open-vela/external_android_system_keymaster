@@ -40,6 +40,7 @@
 #include <keymaster/operation.h>
 #include <keymaster/operation_table.h>
 #include <keymaster/remote_provisioning_utils.h>
+#include <keymaster/secure_deletion_secret_storage.h>
 
 namespace keymaster {
 
@@ -550,9 +551,13 @@ void AndroidKeymaster::BeginOperation(const BeginOperationRequest& request,
     OperationFactory* factory = key->key_factory()->GetOperationFactory(request.purpose);
     if (!factory) return;
 
+    uint32_t sd_slot = key->secure_deletion_slot();
+
     OperationPtr operation(
         factory->CreateOperation(move(*key), request.additional_params, &response->error));
     if (operation.get() == nullptr) return;
+
+    operation->set_secure_deletion_slot(sd_slot);
 
     if (operation->authorizations().Contains(TAG_TRUSTED_CONFIRMATION_REQUIRED)) {
         if (!operation->create_confirmation_verifier_buffer()) {
@@ -667,9 +672,13 @@ void AndroidKeymaster::FinishOperation(const FinishOperationRequest& request,
     }
 
     // Invalidate the single use key from secure storage after finish.
-    if (operation->hw_enforced().Contains(TAG_USAGE_COUNT_LIMIT, 1) &&
-        context_->secure_key_storage() != nullptr) {
-        response->error = context_->secure_key_storage()->DeleteKey(operation->key_id());
+    if (operation->hw_enforced().Contains(TAG_USAGE_COUNT_LIMIT, 1)) {
+        if (context_->secure_deletion_secret_storage() != nullptr) {
+            context_->secure_deletion_secret_storage()->DeleteKey(
+                operation->secure_deletion_slot());
+        } else if (context_->secure_key_storage() != nullptr) {
+            context_->secure_key_storage()->DeleteKey(operation->key_id());
+        }
     }
 
     // If the operation succeeded and TAG_TRUSTED_CONFIRMATION_REQUIRED was
@@ -892,17 +901,27 @@ void AndroidKeymaster::ImportWrappedKey(const ImportWrappedKeyRequest& request,
 }
 
 EarlyBootEndedResponse AndroidKeymaster::EarlyBootEnded() {
+    EarlyBootEndedResponse response(message_version());
+    response.error = KM_ERROR_UNIMPLEMENTED;
+
     if (context_->enforcement_policy()) {
         context_->enforcement_policy()->early_boot_ended();
+        response.error = KM_ERROR_OK;
     }
-    return EarlyBootEndedResponse(message_version());
+
+    return response;
 }
 
 DeviceLockedResponse AndroidKeymaster::DeviceLocked(const DeviceLockedRequest& request) {
+    DeviceLockedResponse response(message_version());
+    response.error = KM_ERROR_UNIMPLEMENTED;
+
     if (context_->enforcement_policy()) {
         context_->enforcement_policy()->device_locked(request.passwordOnly);
+        response.error = KM_ERROR_OK;
     }
-    return DeviceLockedResponse(message_version());
+
+    return response;
 }
 
 }  // namespace keymaster

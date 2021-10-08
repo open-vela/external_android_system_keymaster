@@ -138,8 +138,7 @@ AndroidKeymaster::AndroidKeymaster(KeymasterContext* context, size_t operation_t
 AndroidKeymaster::~AndroidKeymaster() {}
 
 AndroidKeymaster::AndroidKeymaster(AndroidKeymaster&& other)
-    : context_(move(other.context_)), operation_table_(move(other.operation_table_)),
-      message_version_(other.message_version_) {}
+    : context_(move(other.context_)), operation_table_(move(other.operation_table_)) {}
 
 void AndroidKeymaster::GetVersion(const GetVersionRequest&, GetVersionResponse* rsp) {
     if (rsp == nullptr) return;

@@ -108,7 +108,8 @@ keymaster_error_t RsaKeyFactory::GenerateKey(const AuthorizationSet& key_descrip
     } else if (attest_key.get() != nullptr) {
         return KM_ERROR_ATTESTATION_CHALLENGE_MISSING;
     } else {
-        bool fake_signature = key_size < 1024 || !IsCertSigningKey(key_description);
+        bool fake_signature =
+            key_size < 1024 || !key_description.Contains(TAG_PURPOSE, KM_PURPOSE_SIGN);
         *cert_chain =
             context_.GenerateSelfSignedCertificate(key, key_description, fake_signature, &error);
     }
@@ -155,7 +156,8 @@ keymaster_error_t RsaKeyFactory::ImportKey(const AuthorizationSet& key_descripti
     } else if (attest_key.get() != nullptr) {
         return KM_ERROR_ATTESTATION_CHALLENGE_MISSING;
     } else {
-        bool fake_signature = key_size < 1024 || !IsCertSigningKey(key_description);
+        bool fake_signature =
+            key_size < 1024 || !key_description.Contains(TAG_PURPOSE, KM_PURPOSE_SIGN);
         *cert_chain =
             context_.GenerateSelfSignedCertificate(key, key_description, fake_signature, &error);
     }

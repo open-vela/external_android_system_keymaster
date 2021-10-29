@@ -121,7 +121,6 @@ vector<KeyCharacteristics> convertKeyCharacteristics(SecurityLevel keyMintSecuri
         case KM_TAG_CONFIRMATION_TOKEN:
         case KM_TAG_DEVICE_UNIQUE_ATTESTATION:
         case KM_TAG_IDENTITY_CREDENTIAL_KEY:
-        case KM_TAG_INCLUDE_UNIQUE_ID:
         case KM_TAG_MAC_LENGTH:
         case KM_TAG_NONCE:
         case KM_TAG_RESET_SINCE_ID_ROTATION:
@@ -141,6 +140,7 @@ vector<KeyCharacteristics> convertKeyCharacteristics(SecurityLevel keyMintSecuri
         case KM_TAG_EARLY_BOOT_ONLY:
         case KM_TAG_EC_CURVE:
         case KM_TAG_EXPORTABLE:
+        case KM_TAG_INCLUDE_UNIQUE_ID:
         case KM_TAG_KEY_SIZE:
         case KM_TAG_MAX_USES_PER_BOOT:
         case KM_TAG_MIN_MAC_LENGTH:
@@ -219,12 +219,6 @@ AndroidKeyMintDevice::AndroidKeyMintDevice(SecurityLevel securityLevel)
                   KmVersion::KEYMINT_1, static_cast<keymaster_security_level_t>(securityLevel));
               context->SetSystemVersion(::keymaster::GetOsVersion(),
                                         ::keymaster::GetOsPatchlevel());
-              context->SetVendorPatchlevel(::keymaster::GetVendorPatchlevel());
-              // Software devices cannot be configured by the boot loader but they have
-              // to return a boot patch level. So lets just return the OS patch level.
-              // The OS patch level only has a year and a month so we just add the 1st
-              // of the month as day field.
-              context->SetBootPatchlevel(GetOsPatchlevel() * 100 + 1);
               return context;
           }(),
           kOperationTableSize)),

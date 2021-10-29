@@ -238,18 +238,14 @@ keymaster_error_t ParseAuthEncryptedBlob(const KeymasterKeyBlob& blob,
                                          KeymasterKeyBlob* key_material,
                                          AuthorizationSet* hw_enforced,
                                          AuthorizationSet* sw_enforced) {
-    KmErrorOr<DeserializedKey> key = DeserializeAuthEncryptedBlob(blob);
-    if (!key) return key.error();
+    keymaster_error_t error;
+    DeserializedKey key = DeserializeAuthEncryptedBlob(blob, &error);
+    if (error != KM_ERROR_OK) return error;
 
-    KmErrorOr<KeymasterKeyBlob> decrypted =
-        DecryptKey(*key, hidden, SecureDeletionData(), MASTER_KEY);
-    if (!decrypted) return decrypted.error();
-
-    *key_material = std::move(*decrypted);
-    *hw_enforced = std::move(key->hw_enforced);
-    *sw_enforced = std::move(key->sw_enforced);
-
-    return KM_ERROR_OK;
+    *key_material = DecryptKey(key, hidden, MASTER_KEY, &error);
+    *hw_enforced = move(key.hw_enforced);
+    *sw_enforced = move(key.sw_enforced);
+    return error;
 }
 
 keymaster_error_t SetKeyBlobAuthorizations(const AuthorizationSet& key_description,
@@ -311,7 +307,7 @@ keymaster_error_t SetKeyBlobAuthorizations(const AuthorizationSet& key_descripti
             LOG_E("Tag %d not allowed in key generation/import", entry.tag);
             break;
 
-        // These are provided to support attestation key generation, but should not be included in
+        // These are provided to support attesation key generation, but should not be included in
         // the key characteristics.
         case KM_TAG_ATTESTATION_APPLICATION_ID:
         case KM_TAG_ATTESTATION_CHALLENGE:
@@ -327,7 +323,6 @@ keymaster_error_t SetKeyBlobAuthorizations(const AuthorizationSet& key_descripti
         case KM_TAG_CERTIFICATE_SUBJECT:
         case KM_TAG_CERTIFICATE_NOT_BEFORE:
         case KM_TAG_CERTIFICATE_NOT_AFTER:
-        case KM_TAG_INCLUDE_UNIQUE_ID:
         case KM_TAG_RESET_SINCE_ID_ROTATION:
             break;
 
@@ -346,6 +341,7 @@ keymaster_error_t SetKeyBlobAuthorizations(const AuthorizationSet& key_descripti
         case KM_TAG_DIGEST:
         case KM_TAG_EARLY_BOOT_ONLY:
         case KM_TAG_EC_CURVE:
+        case KM_TAG_INCLUDE_UNIQUE_ID:
         case KM_TAG_KEY_SIZE:
         case KM_TAG_MAX_BOOT_LEVEL:
         case KM_TAG_MAX_USES_PER_BOOT:

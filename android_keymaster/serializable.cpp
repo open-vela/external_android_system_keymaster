@@ -74,6 +74,10 @@ bool copy_size_and_data_from_buf(const uint8_t** buf_ptr, const uint8_t* end, si
 
 bool Buffer::reserve(size_t size) {
     if (available_write() < size) {
+        if (!valid_buffer_state()) {
+            return false;
+        }
+
         size_t new_size = buffer_size_ + size - available_write();
         uint8_t* new_buffer = new (std::nothrow) uint8_t[new_size];
         if (!new_buffer) return false;
@@ -121,6 +125,10 @@ size_t Buffer::available_read() const {
     return write_position_ - read_position_;
 }
 
+bool Buffer::valid_buffer_state() const {
+    return (buffer_size_ >= write_position_) && (write_position_ >= read_position_);
+}
+
 bool Buffer::write(const uint8_t* src, size_t write_length) {
     if (available_write() < write_length) return false;
     memcpy(buffer_.get() + write_position_, src, write_length);
@@ -132,6 +140,24 @@ bool Buffer::read(uint8_t* dest, size_t read_length) {
     if (available_read() < read_length) return false;
     memcpy(dest, buffer_.get() + read_position_, read_length);
     read_position_ += read_length;
+    return true;
+}
+
+bool Buffer::advance_write(int distance) {
+    if (distance < 0) {
+        return false;
+    }
+
+    const size_t validated_distance = static_cast<size_t>(distance);
+    size_t new_write_position = 0;
+
+    // if an integer overflow occurred or the new position exceeds the buffer_size return false.
+    if (__builtin_add_overflow(write_position_, validated_distance, &new_write_position) ||
+        new_write_position > buffer_size_) {
+        return false;
+    }
+
+    write_position_ = new_write_position;
     return true;
 }
 

@@ -37,6 +37,9 @@ std::vector<std::function<void(keymaster::Buffer*, FuzzedDataProvider*)>> operat
         buf->reserve(fdp->ConsumeIntegralInRange<int>(kMinBufferSize, kMaxBufferSize));
     },
     [](keymaster::Buffer* buf, FuzzedDataProvider* fdp) -> void {
+        buf->advance_read(fdp->ConsumeIntegral<int>());
+    },
+    [](keymaster::Buffer* buf, FuzzedDataProvider* fdp) -> void {
         buf->advance_write(fdp->ConsumeIntegral<int>());
     },
     [](keymaster::Buffer* buf, FuzzedDataProvider* fdp) -> void {

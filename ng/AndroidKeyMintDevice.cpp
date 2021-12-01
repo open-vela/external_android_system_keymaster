@@ -53,7 +53,7 @@ vector<KeyCharacteristics> convertKeyCharacteristics(SecurityLevel keyMintSecuri
     if (keyMintSecurityLevel != SecurityLevel::SOFTWARE) {
         // We're pretending to be TRUSTED_ENVIRONMENT or STRONGBOX.
         keyMintEnforced.authorizations = kmParamSet2Aidl(hw_enforced);
-        if (include_keystore_enforced) {
+        if (include_keystore_enforced && !sw_enforced.empty()) {
             // Put all the software authorizations in the keystore list.
             KeyCharacteristics keystoreEnforced{SecurityLevel::KEYSTORE,
                                                 kmParamSet2Aidl(sw_enforced)};
@@ -219,6 +219,12 @@ AndroidKeyMintDevice::AndroidKeyMintDevice(SecurityLevel securityLevel)
                   KmVersion::KEYMINT_1, static_cast<keymaster_security_level_t>(securityLevel));
               context->SetSystemVersion(::keymaster::GetOsVersion(),
                                         ::keymaster::GetOsPatchlevel());
+              context->SetVendorPatchlevel(::keymaster::GetVendorPatchlevel());
+              // Software devices cannot be configured by the boot loader but they have
+              // to return a boot patch level. So lets just return the OS patch level.
+              // The OS patch level only has a year and a month so we just add the 1st
+              // of the month as day field.
+              context->SetBootPatchlevel(GetOsPatchlevel() * 100 + 1);
               return context;
           }(),
           kOperationTableSize)),

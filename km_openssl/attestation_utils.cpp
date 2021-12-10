@@ -75,7 +75,6 @@ keymaster_error_t build_attestation_extension(const AuthorizationSet& attest_par
     return KM_ERROR_OK;
 }
 
-#ifdef KEYMINT_EAT_EXTENSION_SUPPORT
 keymaster_error_t build_eat_extension(const AuthorizationSet& attest_params,
                                       const AuthorizationSet& tee_enforced,
                                       const AuthorizationSet& sw_enforced,
@@ -106,7 +105,6 @@ keymaster_error_t build_eat_extension(const AuthorizationSet& attest_params,
 
     return KM_ERROR_OK;
 }
-#endif
 
 keymaster_error_t add_attestation_extension(const AuthorizationSet& attest_params,
                                             const AuthorizationSet& tee_enforced,
@@ -114,9 +112,16 @@ keymaster_error_t add_attestation_extension(const AuthorizationSet& attest_param
                                             const AttestationContext& context,  //
                                             X509* certificate) {
     X509_EXTENSION_Ptr attest_extension;
-    if (auto error = build_attestation_extension(attest_params, tee_enforced, sw_enforced, context,
-                                                 &attest_extension)) {
-        return error;
+    if (context.GetKmVersion() <= KmVersion::KEYMINT_1) {
+        if (auto error = build_attestation_extension(attest_params, tee_enforced, sw_enforced,
+                                                     context, &attest_extension)) {
+            return error;
+        }
+    } else {
+        if (auto error = build_eat_extension(attest_params, tee_enforced, sw_enforced, context,
+                                             &attest_extension)) {
+            return error;
+        }
     }
 
     if (!X509_add_ext(certificate, attest_extension.get() /* Don't release; copied */,

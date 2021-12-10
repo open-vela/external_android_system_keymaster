@@ -128,7 +128,13 @@ keymaster_error_t get_certificate_params(const AuthorizationSet& caller_params,
     cert_params->expire_date_time = kUndefinedExpirationDateTime;
 
     uint64_t tmp;
-    if (kmVersion < KmVersion::KEYMINT_1) {
+    switch (kmVersion) {
+    case KmVersion::KEYMASTER_1:
+    case KmVersion::KEYMASTER_1_1:
+    case KmVersion::KEYMASTER_2:
+    case KmVersion::KEYMASTER_3:
+    case KmVersion::KEYMASTER_4:
+    case KmVersion::KEYMASTER_4_1:
         if (caller_params.GetTagValue(TAG_ACTIVE_DATETIME, &tmp)) {
             LOG_D("Using TAG_ACTIVE_DATETIME: %lu", tmp);
             cert_params->active_date_time = static_cast<int64_t>(tmp);
@@ -137,7 +143,9 @@ keymaster_error_t get_certificate_params(const AuthorizationSet& caller_params,
             LOG_D("Using TAG_ORIGINATION_EXPIRE_DATETIME: %lu", tmp);
             cert_params->expire_date_time = static_cast<int64_t>(tmp);
         }
-    } else {
+        break;
+
+    case KmVersion::KEYMINT_1:
         if (!caller_params.GetTagValue(TAG_CERTIFICATE_NOT_BEFORE, &tmp)) {
             return KM_ERROR_MISSING_NOT_BEFORE;
         }

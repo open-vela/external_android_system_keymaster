@@ -29,14 +29,8 @@ bool EcKey::EvpToInternal(const EVP_PKEY* pkey) {
     return ec_key_.get() != nullptr;
 }
 
-EVP_PKEY_Ptr EcKey::InternalToEvp() const {
-    EVP_PKEY_Ptr pkey(EVP_PKEY_new());
-    if (pkey.get() != nullptr) {
-        if (EVP_PKEY_set1_EC_KEY(pkey.get(), ec_key_.get()) != 1) {
-            return {};
-        }
-    }
-    return pkey;
+bool EcKey::InternalToEvp(EVP_PKEY* pkey) const {
+    return EVP_PKEY_set1_EC_KEY(pkey, ec_key_.get()) == 1;
 }
 
 }  // namespace keymaster

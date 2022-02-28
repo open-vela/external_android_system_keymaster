@@ -97,8 +97,6 @@ class AndroidKeymaster {
     ConfigureVendorPatchlevel(const ConfigureVendorPatchlevelRequest& request);
     ConfigureBootPatchlevelResponse
     ConfigureBootPatchlevel(const ConfigureBootPatchlevelRequest& request);
-    ConfigureVerifiedBootInfoResponse
-    ConfigureVerifiedBootInfo(const ConfigureVerifiedBootInfoRequest& request);
 
     bool has_operation(keymaster_operation_handle_t op_handle) const;
 

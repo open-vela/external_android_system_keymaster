@@ -16,16 +16,11 @@
 
 #pragma once
 
-#include <hardware/keymaster_defs.h>
 #include <keymaster/remote_provisioning_context.h>
 
 #include <cppbor.h>
 
-#include <cstdint>
 #include <mutex>
-#include <string>
-#include <string_view>
-#include <vector>
 
 namespace keymaster {
 
@@ -34,7 +29,7 @@ namespace keymaster {
  */
 class PureSoftRemoteProvisioningContext : public RemoteProvisioningContext {
   public:
-    explicit PureSoftRemoteProvisioningContext(keymaster_security_level_t security_level);
+    PureSoftRemoteProvisioningContext() = default;
     ~PureSoftRemoteProvisioningContext() override = default;
     std::vector<uint8_t> DeriveBytesFromHbk(const std::string& context,
                                             size_t numBytes) const override;
@@ -46,26 +41,11 @@ class PureSoftRemoteProvisioningContext : public RemoteProvisioningContext {
     std::optional<cppcose::HmacSha256>
     GenerateHmacSha256(const cppcose::bytevec& input) const override;
 
-    void SetSystemVersion(uint32_t os_version, uint32_t os_patchlevel);
-    void SetVendorPatchlevel(uint32_t vendor_patchlevel);
-    void SetBootPatchlevel(uint32_t boot_patchlevel);
-    void SetVerifiedBootInfo(std::string_view boot_state, std::string_view bootloader_state,
-                             const std::vector<uint8_t>& vbmeta_digest);
-
   private:
     // Initialize the BCC if it has not yet happened.
     void LazyInitProdBcc() const;
 
     std::pair<std::vector<uint8_t>, cppbor::Array> GenerateBcc(bool testMode) const;
-
-    keymaster_security_level_t security_level_;
-    std::optional<uint32_t> os_version_;
-    std::optional<uint32_t> os_patchlevel_;
-    std::optional<uint32_t> vendor_patchlevel_;
-    std::optional<uint32_t> boot_patchlevel_;
-    std::optional<std::string> verified_boot_state_;
-    std::optional<std::string> bootloader_state_;
-    std::optional<std::vector<uint8_t>> vbmeta_digest_;
 
     mutable std::once_flag bccInitFlag_;
 

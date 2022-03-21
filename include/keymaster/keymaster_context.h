@@ -18,7 +18,6 @@
 #define SYSTEM_KEYMASTER_KEYMASTER_CONTEXT_H_
 
 #include <optional>
-#include <string_view>
 
 #include <assert.h>
 
@@ -34,7 +33,6 @@ namespace keymaster {
 class AuthorizationSet;
 class KeyFactory;
 class OperationFactory;
-class SecureDeletionSecretStorage;
 template <typename BlobType> struct TKeymasterBlob;
 typedef TKeymasterBlob<keymaster_key_blob_t> KeymasterKeyBlob;
 class Key;
@@ -191,14 +189,6 @@ class KeymasterContext {
     virtual SecureKeyStorage* secure_key_storage() { return nullptr; }
 
     /**
-     * Return the secure deletion secret storage for this context, or null if none is available.
-     *
-     * Note that SecureDeletionSecretStorage obsoletes SecureKeyStorage (see method above).  The
-     * latter will be removed in the future.
-     */
-    virtual SecureDeletionSecretStorage* secure_deletion_secret_storage() { return nullptr; }
-
-    /**
      * Checks that the data in |input_data| of size |input_data_size| matches the
      * confirmation token given by |confirmation_token|.
      *
@@ -226,16 +216,6 @@ class KeymasterContext {
     virtual RemoteProvisioningContext* GetRemoteProvisioningContext() const { return nullptr; }
 
     /**
-     * Sets the verified boot metadata. This value should be set by the bootloader.
-     * A subsequent to set a different value will return KM_ERROR_INVALID_ARGUMENT.
-     */
-    virtual keymaster_error_t SetVerifiedBootInfo(std::string_view /*verified_boot_state*/,
-                                                  std::string_view /*bootloader_state*/,
-                                                  const std::vector<uint8_t>& /*vbmeta_digest*/) {
-        return KM_ERROR_UNIMPLEMENTED;
-    }
-
-    /**
      * Sets the vendor patchlevel (format YYYYMMDD) for the implementation. This value should
      * be set by the HAL service at start of day.  A subsequent attempt to set a different
      * value will return KM_ERROR_INVALID_ARGUMENT.
@@ -247,7 +227,7 @@ class KeymasterContext {
     /**
      * Sets the boot patchlevel (format YYYYMMDD) for the implementation. This value should be set
      * by the bootloader.  A subsequent to set a different value will return
-     * KM_ERROR_INVALID_ARGUMENT.
+     * KM_ERROR_INVALID_ARGUMENT;
      */
     virtual keymaster_error_t SetBootPatchlevel(uint32_t /* boot_patchlevel */) {
         return KM_ERROR_UNIMPLEMENTED;

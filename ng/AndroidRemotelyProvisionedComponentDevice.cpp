@@ -83,10 +83,9 @@ AndroidRemotelyProvisionedComponentDevice::AndroidRemotelyProvisionedComponentDe
 }
 
 ScopedAStatus AndroidRemotelyProvisionedComponentDevice::getHardwareInfo(RpcHardwareInfo* info) {
-    info->versionNumber = 2;
+    info->versionNumber = 1;
     info->rpcAuthorName = "Google";
     info->supportedEekCurve = RpcHardwareInfo::CURVE_25519;
-    info->uniqueId = "default keymint";
     return ScopedAStatus::ok();
 }
 

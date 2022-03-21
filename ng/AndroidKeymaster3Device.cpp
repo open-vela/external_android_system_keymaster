@@ -21,7 +21,7 @@
 
 #include <android/log.h>
 
-#include "keymaster_tags.h"
+#include "include/authorization_set.h"
 
 #include <keymaster/android_keymaster.h>
 #include <keymaster/android_keymaster_messages.h>
@@ -224,12 +224,6 @@ AndroidKeymaster3Device::AndroidKeymaster3Device()
           []() -> auto {
               auto context = new PureSoftKeymasterContext(KmVersion::KEYMASTER_3);
               context->SetSystemVersion(GetOsVersion(), GetOsPatchlevel());
-              context->SetVendorPatchlevel(GetVendorPatchlevel());
-              // Software devices cannot be configured by the boot loader but they have
-              // to return a boot patch level. So lets just return the OS patch level.
-              // The OS patch level only has a year and a month so we just add the 1st
-              // of the month as day field.
-              context->SetBootPatchlevel(GetOsPatchlevel() * 100 + 1);
               return context;
           }(),
           kOperationTableSize)),

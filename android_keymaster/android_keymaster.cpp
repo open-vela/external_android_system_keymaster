@@ -40,6 +40,7 @@
 #include <keymaster/operation.h>
 #include <keymaster/operation_table.h>
 #include <keymaster/remote_provisioning_utils.h>
+#include <keymaster/secure_deletion_secret_storage.h>
 
 namespace keymaster {
 
@@ -47,7 +48,6 @@ namespace {
 
 using cppcose::constructCoseEncrypt;
 using cppcose::constructCoseMac0;
-using cppcose::constructCoseSign1;
 using cppcose::CoseKey;
 using cppcose::EC2;
 using cppcose::ES256;
@@ -131,14 +131,15 @@ constexpr int kP256AffinePointSize = 32;
 }  // anonymous namespace
 
 AndroidKeymaster::AndroidKeymaster(KeymasterContext* context, size_t operation_table_size,
-                                   uint32_t message_version)
+                                   int32_t message_version)
     : context_(context), operation_table_(new (std::nothrow) OperationTable(operation_table_size)),
       message_version_(message_version) {}
 
 AndroidKeymaster::~AndroidKeymaster() {}
 
 AndroidKeymaster::AndroidKeymaster(AndroidKeymaster&& other)
-    : context_(move(other.context_)), operation_table_(move(other.operation_table_)) {}
+    : context_(move(other.context_)), operation_table_(move(other.operation_table_)),
+      message_version_(other.message_version_) {}
 
 // TODO(swillden): Unify support analysis.  Right now, we have per-keytype methods that determine if
 // specific modes, padding, etc. are supported for that key type, and AndroidKeymaster also has
@@ -331,6 +332,13 @@ void AndroidKeymaster::GenerateKey(const GenerateKeyRequest& request,
         if (response->error != KM_ERROR_OK) return;
     }
 
+    if (request.key_description.Contains(TAG_PURPOSE, KM_PURPOSE_ATTEST_KEY) &&
+        request.key_description.GetTagCount(TAG_PURPOSE) > 1) {
+        // ATTEST_KEY cannot be combined with any other purpose.
+        response->error = KM_ERROR_INCOMPATIBLE_PURPOSE;
+        return;
+    }
+
     response->enforced.Clear();
     response->unenforced.Clear();
     response->error = factory->GenerateKey(request.key_description,
@@ -443,34 +451,20 @@ void AndroidKeymaster::GenerateCsr(const GenerateCsrRequest& request,
     }
     response->keys_to_sign_mac = KeymasterBlob(pubKeysToSignMac->data(), pubKeysToSignMac->size());
 
-    std::vector<uint8_t> devicePrivKey;
-    cppbor::Array bcc;
-    if (request.test_mode) {
-        std::tie(devicePrivKey, bcc) = rem_prov_ctx->GenerateBcc(/*testMode=*/true);
-    } else {
-        devicePrivKey = rem_prov_ctx->devicePrivKey_;
-        auto clone = rem_prov_ctx->bcc_.clone();
-        if (!clone->asArray()) {
-            LOG_E("The BCC is not an array.", 0);
-            response->error = static_cast<keymaster_error_t>(kStatusFailed);
-            return;
-        }
-        bcc = std::move(*clone->asArray());
-    }
     std::unique_ptr<cppbor::Map> device_info_map = rem_prov_ctx->CreateDeviceInfo();
     std::vector<uint8_t> device_info = device_info_map->encode();
     response->device_info_blob = KeymasterBlob(device_info.data(), device_info.size());
-    auto signedMac =
-        constructCoseSign1(devicePrivKey /* Signing key */,  //
-                           ephemeral_mac_key /* Payload */,
-                           cppbor::Array() /* AAD */
-                               .add(std::pair(request.challenge.begin(),
-                                              request.challenge.end() - request.challenge.begin()))
-                               .add(std::move(device_info_map))
-                               .add(std::pair(pubKeysToSignMac->data(), pubKeysToSignMac->size()))
-                               .encode());
-    if (!signedMac) {
-        LOG_E("Failed to construct COSE_Sign1 over the ephemeral mac key.", 0);
+    auto protectedDataPayload = rem_prov_ctx->BuildProtectedDataPayload(
+        request.test_mode,  //
+        ephemeral_mac_key /* Payload */,
+        cppbor::Array() /* AAD */
+            .add(std::pair(request.challenge.begin(),
+                           request.challenge.end() - request.challenge.begin()))
+            .add(std::move(device_info_map))
+            .add(std::pair(pubKeysToSignMac->data(), pubKeysToSignMac->size()))
+            .encode());
+    if (!protectedDataPayload) {
+        LOG_E("Failed to construct ProtectedData: %s", protectedDataPayload.moveMessage().c_str());
         response->error = static_cast<keymaster_error_t>(kStatusFailed);
         return;
     }
@@ -500,12 +494,10 @@ void AndroidKeymaster::GenerateCsr(const GenerateCsrRequest& request,
         response->error = static_cast<keymaster_error_t>(kStatusFailed);
         return;
     }
-    auto coseEncrypted = constructCoseEncrypt(*sessionKey, nonce,
-                                              cppbor::Array()  // payload
-                                                  .add(signedMac.moveValue())
-                                                  .add(std::move(bcc))
-                                                  .encode(),
-                                              {},  // aad
+    auto coseEncrypted = constructCoseEncrypt(*sessionKey,                       //
+                                              nonce,                             //
+                                              protectedDataPayload.moveValue(),  //
+                                              {},                                // aad
                                               buildCertReqRecipients(ephemeralPubKey, eek->second));
 
     if (!coseEncrypted) {
@@ -550,9 +542,13 @@ void AndroidKeymaster::BeginOperation(const BeginOperationRequest& request,
     OperationFactory* factory = key->key_factory()->GetOperationFactory(request.purpose);
     if (!factory) return;
 
+    uint32_t sd_slot = key->secure_deletion_slot();
+
     OperationPtr operation(
         factory->CreateOperation(move(*key), request.additional_params, &response->error));
     if (operation.get() == nullptr) return;
+
+    operation->set_secure_deletion_slot(sd_slot);
 
     if (operation->authorizations().Contains(TAG_TRUSTED_CONFIRMATION_REQUIRED)) {
         if (!operation->create_confirmation_verifier_buffer()) {
@@ -667,9 +663,13 @@ void AndroidKeymaster::FinishOperation(const FinishOperationRequest& request,
     }
 
     // Invalidate the single use key from secure storage after finish.
-    if (operation->hw_enforced().Contains(TAG_USAGE_COUNT_LIMIT, 1) &&
-        context_->secure_key_storage() != nullptr) {
-        response->error = context_->secure_key_storage()->DeleteKey(operation->key_id());
+    if (operation->hw_enforced().Contains(TAG_USAGE_COUNT_LIMIT, 1)) {
+        if (context_->secure_deletion_secret_storage() != nullptr) {
+            context_->secure_deletion_secret_storage()->DeleteKey(
+                operation->secure_deletion_slot());
+        } else if (context_->secure_key_storage() != nullptr) {
+            context_->secure_key_storage()->DeleteKey(operation->key_id());
+        }
     }
 
     // If the operation succeeded and TAG_TRUSTED_CONFIRMATION_REQUIRED was
@@ -781,6 +781,13 @@ void AndroidKeymaster::ImportKey(const ImportKeyRequest& request, ImportKeyRespo
         if (response->error != KM_ERROR_OK) return;
     }
 
+    if (request.key_description.Contains(TAG_PURPOSE, KM_PURPOSE_ATTEST_KEY) &&
+        request.key_description.GetTagCount(TAG_PURPOSE) > 1) {
+        // ATTEST_KEY cannot be combined with any other purpose.
+        response->error = KM_ERROR_INCOMPATIBLE_PURPOSE;
+        return;
+    }
+
     response->error = factory->ImportKey(request.key_description,  //
                                          request.key_format,       //
                                          request.key_data,         //
@@ -818,6 +825,14 @@ ConfigureBootPatchlevelResponse
 AndroidKeymaster::ConfigureBootPatchlevel(const ConfigureBootPatchlevelRequest& request) {
     ConfigureBootPatchlevelResponse rsp(message_version());
     rsp.error = context_->SetBootPatchlevel(request.boot_patchlevel);
+    return rsp;
+}
+
+ConfigureVerifiedBootInfoResponse
+AndroidKeymaster::ConfigureVerifiedBootInfo(const ConfigureVerifiedBootInfoRequest& request) {
+    ConfigureVerifiedBootInfoResponse rsp(message_version());
+    rsp.error = context_->SetVerifiedBootInfo(request.boot_state, request.bootloader_state,
+                                              request.vbmeta_digest);
     return rsp;
 }
 
@@ -892,17 +907,27 @@ void AndroidKeymaster::ImportWrappedKey(const ImportWrappedKeyRequest& request,
 }
 
 EarlyBootEndedResponse AndroidKeymaster::EarlyBootEnded() {
+    EarlyBootEndedResponse response(message_version());
+    response.error = KM_ERROR_UNIMPLEMENTED;
+
     if (context_->enforcement_policy()) {
         context_->enforcement_policy()->early_boot_ended();
+        response.error = KM_ERROR_OK;
     }
-    return EarlyBootEndedResponse(message_version());
+
+    return response;
 }
 
 DeviceLockedResponse AndroidKeymaster::DeviceLocked(const DeviceLockedRequest& request) {
+    DeviceLockedResponse response(message_version());
+    response.error = KM_ERROR_UNIMPLEMENTED;
+
     if (context_->enforcement_policy()) {
         context_->enforcement_policy()->device_locked(request.passwordOnly);
+        response.error = KM_ERROR_OK;
     }
-    return DeviceLockedResponse(message_version());
+
+    return response;
 }
 
 }  // namespace keymaster

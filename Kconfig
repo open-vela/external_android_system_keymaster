@@ -1,0 +1,50 @@
+#
+# Copyright (C) 2023 Xiaomi Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+config ANDROID_KEYMASTER
+	bool
+	depends on CRYPTO_MBEDTLS
+	select ANDROID_LIBCPPBOR
+
+if ANDROID_KEYMASTER
+
+choice
+	prompt "Keymaster device type"
+	default KEYMASTER_SOFTWARE
+
+config KEYMASTER_SOFTWARE
+	bool "Software device"
+
+config KEYMASTER_TEE
+	bool "Tee device"
+endchoice
+
+config KEYMASTER_TEST
+	tristate "keymaster test"
+	depends on LIB_GOOGLETEST
+	default n
+
+if KEYMASTER_TEST
+config KEYMASTER_TEST_PRIORITY
+	int "keymaster test task priority"
+	default 100
+
+config KEYMASTER_TEST_STACKSIZE
+	int "keymaster test stack size"
+	default DEFAULT_TASK_STACKSIZE
+endif
+
+endif

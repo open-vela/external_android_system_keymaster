@@ -21,6 +21,7 @@ CXXEXT = .cpp
 CXXSRCS += android_keymaster/android_keymaster_messages.cpp
 CXXSRCS += android_keymaster/android_keymaster_utils.cpp
 CXXSRCS += android_keymaster/authorization_set.cpp
+CXXSRCS += android_keymaster/keymaster_configuration.cpp
 CXXSRCS += android_keymaster/keymaster_tags.cpp
 CXXSRCS += android_keymaster/serializable.cpp
 CXXSRCS += android_keymaster/logger.cpp
@@ -50,8 +51,11 @@ CXXSRCS += km_mbedtls/sha.cpp
 CXXSRCS += km_openssl/openssl_utils.cpp
 
 ifneq ($(CONFIG_KEYMASTER_TEE),)
-CXXSRCS += ng/tee_keymaster_device.cpp
-CXXSRCS += ng/tee_keymaster_ipc.cpp
+# TA head file
+CXXFLAGS += ${INCDIR_PREFIX}$(APPDIR)/external/kmgk/kmgk/keymaster/ta/include
+
+CXXSRCS += contexts/tee_keymaster_device.cpp
+CXXSRCS += contexts/tee_keymaster_ipc.cpp
 endif
 
 ifneq ($(CONFIG_KEYMASTER_SOFTWARE),)
@@ -59,7 +63,6 @@ CXXFLAGS += -DKEYMASTER_UNIT_TEST_BUILD
 
 CXXSRCS += android_keymaster/android_keymaster.cpp
 CXXSRCS += android_keymaster/keymaster_enforcement.cpp
-CXXSRCS += android_keymaster/keymaster_configuration.cpp
 CXXSRCS += android_keymaster/operation.cpp
 CXXSRCS += android_keymaster/operation_table.cpp
 CXXSRCS += android_keymaster/pure_soft_secure_key_storage.cpp

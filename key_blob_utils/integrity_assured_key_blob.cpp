@@ -52,23 +52,28 @@ static keymaster_error_t ComputeHmac(const uint8_t* serialized_data, size_t seri
     if (!hidden_bytes.get()) return KM_ERROR_MEMORY_ALLOCATION_FAILED;
     hidden.Serialize(hidden_bytes.get(), hidden_bytes.get() + hidden_bytes_size);
 
-    HMAC_CTX ctx;
-    HMAC_CTX_init(&ctx);
+    HMAC_CTX* ctx = HMAC_CTX_new();
+    HMAC_CTX_init(ctx);
     const EVP_MD* md = EVP_sha256();
-    if (!HMAC_Init_ex(&ctx, HMAC_KEY, sizeof(HMAC_KEY), md, nullptr /* engine */))
+    if (!HMAC_Init_ex(ctx, HMAC_KEY, sizeof(HMAC_KEY), md, nullptr /* engine */)) {
+        HMAC_CTX_free(ctx);
         return TranslateLastOpenSslError();
-    HmacCleanup cleanup(&ctx);
+    }
+    HmacCleanup cleanup(ctx);
 
     uint8_t tmp[EVP_MAX_MD_SIZE];
     unsigned tmp_len;
-    if (!HMAC_Update(&ctx, serialized_data, serialized_data_size) ||
-        !HMAC_Update(&ctx, hidden_bytes.get(), hidden_bytes_size) ||  //
-        !HMAC_Final(&ctx, tmp, &tmp_len))
+    if (!HMAC_Update(ctx, serialized_data, serialized_data_size) ||
+        !HMAC_Update(ctx, hidden_bytes.get(), hidden_bytes_size) ||  //
+        !HMAC_Final(ctx, tmp, &tmp_len)) {
+        HMAC_CTX_free(ctx);
         return TranslateLastOpenSslError();
+    }
 
     assert(tmp_len >= HMAC_SIZE);
     memcpy(hmac, tmp, min(HMAC_SIZE, tmp_len));
 
+    HMAC_CTX_free(ctx);
     return KM_ERROR_OK;
 }
 

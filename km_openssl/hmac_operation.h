@@ -41,7 +41,7 @@ class HmacOperation : public Operation {
     keymaster_error_t error() { return error_; }
 
   private:
-    HMAC_CTX ctx_;
+    HMAC_CTX* ctx_;
     keymaster_error_t error_;
     const size_t mac_length_;
     const size_t min_mac_length_;

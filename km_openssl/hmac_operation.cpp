@@ -91,9 +91,9 @@ const keymaster_digest_t* HmacOperationFactory::SupportedDigests(size_t* digest_
 HmacOperation::HmacOperation(Key&& key, keymaster_purpose_t purpose, keymaster_digest_t digest,
                              size_t mac_length, size_t min_mac_length)
     : Operation(purpose, key.hw_enforced_move(), key.sw_enforced_move()), error_(KM_ERROR_OK),
-      mac_length_(mac_length), min_mac_length_(min_mac_length) {
+      mac_length_(mac_length), min_mac_length_(min_mac_length), ctx_(HMAC_CTX_new()) {
     // Initialize CTX first, so dtor won't crash even if we error out later.
-    HMAC_CTX_init(&ctx_);
+    HMAC_CTX_init(ctx_);
 
     const EVP_MD* md = nullptr;
     switch (digest) {
@@ -135,11 +135,12 @@ HmacOperation::HmacOperation(Key&& key, keymaster_purpose_t purpose, keymaster_d
     }
 
     KeymasterKeyBlob blob = key.key_material_move();
-    HMAC_Init_ex(&ctx_, blob.key_material, blob.key_material_size, md, nullptr /* engine */);
+    HMAC_Init_ex(ctx_, blob.key_material, blob.key_material_size, md, nullptr /* engine */);
 }
 
 HmacOperation::~HmacOperation() {
-    HMAC_CTX_cleanup(&ctx_);
+    HMAC_CTX_cleanup(ctx_);
+    HMAC_CTX_free(ctx_);
 }
 
 keymaster_error_t HmacOperation::Begin(const AuthorizationSet& /* input_params */,
@@ -154,7 +155,7 @@ keymaster_error_t HmacOperation::Begin(const AuthorizationSet& /* input_params *
 keymaster_error_t HmacOperation::Update(const AuthorizationSet& /* additional_params */,
                                         const Buffer& input, AuthorizationSet* /* output_params */,
                                         Buffer* /* output */, size_t* input_consumed) {
-    if (!HMAC_Update(&ctx_, input.peek_read(), input.available_read()))
+    if (!HMAC_Update(ctx_, input.peek_read(), input.available_read()))
         return TranslateLastOpenSslError();
     *input_consumed = input.available_read();
     return KM_ERROR_OK;
@@ -172,7 +173,7 @@ keymaster_error_t HmacOperation::Finish(const AuthorizationSet& additional_param
 
     uint8_t digest[EVP_MAX_MD_SIZE];
     unsigned int digest_len;
-    if (!HMAC_Final(&ctx_, digest, &digest_len)) return TranslateLastOpenSslError();
+    if (!HMAC_Final(ctx_, digest, &digest_len)) return TranslateLastOpenSslError();
 
     switch (purpose()) {
     case KM_PURPOSE_SIGN:

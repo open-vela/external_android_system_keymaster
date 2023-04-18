@@ -33,8 +33,8 @@ class EcdsaOperation : public Operation {
     EcdsaOperation(AuthorizationSet&& hw_enforced, AuthorizationSet&& sw_enforced,
                    keymaster_purpose_t purpose, keymaster_digest_t digest, EVP_PKEY* key)
         : Operation(purpose, move(hw_enforced), move(sw_enforced)), digest_(digest),
-          digest_algorithm_(nullptr), ecdsa_key_(key) {
-        EVP_MD_CTX_init(&digest_ctx_);
+          digest_algorithm_(nullptr), ecdsa_key_(key), digest_ctx_(EVP_MD_CTX_new()) {
+        EVP_MD_CTX_init(digest_ctx_);
     }
     ~EcdsaOperation();
 
@@ -47,7 +47,7 @@ class EcdsaOperation : public Operation {
     keymaster_digest_t digest_;
     const EVP_MD* digest_algorithm_;
     EVP_PKEY* ecdsa_key_;
-    EVP_MD_CTX digest_ctx_;
+    EVP_MD_CTX* digest_ctx_;
     Buffer data_;
 };
 

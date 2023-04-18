@@ -95,7 +95,7 @@ keymaster_error_t FakeKeyAuthorizations(EVP_PKEY* pubkey, AuthorizationSet* hw_e
     hw_enforced->Clear();
     sw_enforced->Clear();
 
-    switch (EVP_PKEY_type(pubkey->type)) {
+    switch (EVP_PKEY_type(EVP_PKEY_id(pubkey))) {
     case EVP_PKEY_RSA: {
         hw_enforced->push_back(TAG_ALGORITHM, KM_ALGORITHM_RSA);
         hw_enforced->push_back(TAG_DIGEST, KM_DIGEST_NONE);
@@ -119,7 +119,7 @@ keymaster_error_t FakeKeyAuthorizations(EVP_PKEY* pubkey, AuthorizationSet* hw_e
         RSA_Ptr rsa(EVP_PKEY_get1_RSA(pubkey));
         if (!rsa) return TranslateLastOpenSslError();
         hw_enforced->push_back(TAG_KEY_SIZE, RSA_size(rsa.get()) * 8);
-        uint64_t public_exponent = BN_get_word(rsa->e);
+        uint64_t public_exponent = BN_get_word(RSA_get0_e(rsa.get()));
         if (public_exponent == 0xffffffffL) return KM_ERROR_INVALID_KEY_BLOB;
         hw_enforced->push_back(TAG_RSA_PUBLIC_EXPONENT, public_exponent);
         break;

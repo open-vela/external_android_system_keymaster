@@ -61,7 +61,8 @@ const keymaster_digest_t* EcdsaOperationFactory::SupportedDigests(size_t* digest
 
 EcdsaOperation::~EcdsaOperation() {
     if (ecdsa_key_ != nullptr) EVP_PKEY_free(ecdsa_key_);
-    EVP_MD_CTX_cleanup(&digest_ctx_);
+    EVP_MD_CTX_cleanup(digest_ctx_);
+    EVP_MD_CTX_free(digest_ctx_);
 }
 
 keymaster_error_t EcdsaOperation::InitDigest() {
@@ -117,7 +118,7 @@ keymaster_error_t EcdsaSignOperation::Begin(const AuthorizationSet& /* input_par
     if (digest_ == KM_DIGEST_NONE) return KM_ERROR_OK;
 
     EVP_PKEY_CTX* pkey_ctx;
-    if (EVP_DigestSignInit(&digest_ctx_, &pkey_ctx, digest_algorithm_, nullptr /* engine */,
+    if (EVP_DigestSignInit(digest_ctx_, &pkey_ctx, digest_algorithm_, nullptr /* engine */,
                            ecdsa_key_) != 1)
         return TranslateLastOpenSslError();
     return KM_ERROR_OK;
@@ -129,7 +130,7 @@ keymaster_error_t EcdsaSignOperation::Update(const AuthorizationSet& /* addition
                                              Buffer* /* output */, size_t* input_consumed) {
     if (digest_ == KM_DIGEST_NONE) return StoreData(input, input_consumed);
 
-    if (EVP_DigestSignUpdate(&digest_ctx_, input.peek_read(), input.available_read()) != 1)
+    if (EVP_DigestSignUpdate(digest_ctx_, input.peek_read(), input.available_read()) != 1)
         return TranslateLastOpenSslError();
     *input_consumed = input.available_read();
     return KM_ERROR_OK;
@@ -156,10 +157,10 @@ keymaster_error_t EcdsaSignOperation::Finish(const AuthorizationSet& additional_
             return TranslateLastOpenSslError();
         siglen = siglen_tmp;
     } else {
-        if (EVP_DigestSignFinal(&digest_ctx_, nullptr /* signature */, &siglen) != 1)
+        if (EVP_DigestSignFinal(digest_ctx_, nullptr /* signature */, &siglen) != 1)
             return TranslateLastOpenSslError();
         if (!output->Reinitialize(siglen)) return KM_ERROR_MEMORY_ALLOCATION_FAILED;
-        if (EVP_DigestSignFinal(&digest_ctx_, output->peek_write(), &siglen) <= 0)
+        if (EVP_DigestSignFinal(digest_ctx_, output->peek_write(), &siglen) <= 0)
             return TranslateLastOpenSslError();
     }
     if (!output->advance_write(siglen)) return KM_ERROR_UNKNOWN_ERROR;
@@ -196,20 +197,23 @@ keymaster_error_t Ed25519SignOperation::Finish(const AuthorizationSet& additiona
         return KM_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
-    EVP_MD_CTX ctx;
-    EVP_MD_CTX_init(&ctx);
-    if (!EVP_DigestSignInit(&ctx, /* pctx */ nullptr, /* digest */ nullptr, /* engine */ nullptr,
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    EVP_MD_CTX_init(ctx);
+    if (!EVP_DigestSignInit(ctx, /* pctx */ nullptr, /* digest */ nullptr, /* engine */ nullptr,
                             ecdsa_key_)) {
-        EVP_MD_CTX_cleanup(&ctx);
+        EVP_MD_CTX_cleanup(ctx);
+        EVP_MD_CTX_free(ctx);
         return TranslateLastOpenSslError();
     }
     size_t out_len = ED25519_SIGNATURE_LEN;
-    if (!EVP_DigestSign(&ctx, output->peek_write(), &out_len, data_.peek_read(),
+    if (!EVP_DigestSign(ctx, output->peek_write(), &out_len, data_.peek_read(),
                         data_.available_read())) {
-        EVP_MD_CTX_cleanup(&ctx);
+        EVP_MD_CTX_cleanup(ctx);
+        EVP_MD_CTX_free(ctx);
         return TranslateLastOpenSslError();
     }
-    EVP_MD_CTX_cleanup(&ctx);
+    EVP_MD_CTX_cleanup(ctx);
+    EVP_MD_CTX_free(ctx);
     output->advance_write(out_len);
     return KM_ERROR_OK;
 }
@@ -241,7 +245,7 @@ keymaster_error_t EcdsaVerifyOperation::Begin(const AuthorizationSet& /* input_p
     if (digest_ == KM_DIGEST_NONE) return KM_ERROR_OK;
 
     EVP_PKEY_CTX* pkey_ctx;
-    if (EVP_DigestVerifyInit(&digest_ctx_, &pkey_ctx, digest_algorithm_, nullptr /* engine */,
+    if (EVP_DigestVerifyInit(digest_ctx_, &pkey_ctx, digest_algorithm_, nullptr /* engine */,
                              ecdsa_key_) != 1)
         return TranslateLastOpenSslError();
     return KM_ERROR_OK;
@@ -253,7 +257,7 @@ keymaster_error_t EcdsaVerifyOperation::Update(const AuthorizationSet& /* additi
                                                Buffer* /* output */, size_t* input_consumed) {
     if (digest_ == KM_DIGEST_NONE) return StoreData(input, input_consumed);
 
-    if (EVP_DigestVerifyUpdate(&digest_ctx_, input.peek_read(), input.available_read()) != 1)
+    if (EVP_DigestVerifyUpdate(digest_ctx_, input.peek_read(), input.available_read()) != 1)
         return TranslateLastOpenSslError();
     *input_consumed = input.available_read();
     return KM_ERROR_OK;
@@ -277,7 +281,7 @@ keymaster_error_t EcdsaVerifyOperation::Finish(const AuthorizationSet& additiona
             return TranslateLastOpenSslError();
         else if (result == 0)
             return KM_ERROR_VERIFICATION_FAILED;
-    } else if (!EVP_DigestVerifyFinal(&digest_ctx_, signature.peek_read(),
+    } else if (!EVP_DigestVerifyFinal(digest_ctx_, signature.peek_read(),
                                       signature.available_read()))
         return KM_ERROR_VERIFICATION_FAILED;
 

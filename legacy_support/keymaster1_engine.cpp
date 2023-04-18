@@ -153,9 +153,9 @@ RSA* Keymaster1Engine::BuildRsaKey(const KeymasterKeyBlob& blob,
         return nullptr;
     }
 
-    rsa->n = BN_dup(public_rsa->n);
-    rsa->e = BN_dup(public_rsa->e);
-    if (!rsa->n || !rsa->e) {
+    RSA_set0_key(rsa.get(), BN_dup(RSA_get0_n(public_rsa.get())),
+                 BN_dup(RSA_get0_e(public_rsa.get())), nullptr);
+    if (!RSA_get0_n(public_rsa.get()) || !RSA_get0_e(public_rsa.get())) {
         *error = TranslateLastOpenSslError();
         return nullptr;
     }
@@ -203,7 +203,7 @@ EC_KEY* Keymaster1Engine::BuildEcKey(const KeymasterKeyBlob& blob,
 }
 
 Keymaster1Engine::KeyData* Keymaster1Engine::GetData(EVP_PKEY* key) const {
-    switch (EVP_PKEY_type(key->type)) {
+    switch (EVP_PKEY_type(EVP_PKEY_id(key))) {
     case EVP_PKEY_RSA: {
         unique_ptr<RSA, RSA_Delete> rsa(EVP_PKEY_get1_RSA(key));
         return GetData(rsa.get());

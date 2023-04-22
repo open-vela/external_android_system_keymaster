@@ -101,7 +101,7 @@ class BlockCipherEvpOperation : public Operation {
     size_t block_size_bytes() const { return cipher_description_.block_size_bytes(); }
 
     const keymaster_block_mode_t block_mode_;
-    EVP_CIPHER_CTX ctx_;
+    EVP_CIPHER_CTX *ctx_;
     KeymasterBlob iv_;
     const bool caller_iv_;
     const size_t tag_length_;

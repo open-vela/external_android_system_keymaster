@@ -146,12 +146,13 @@ BlockCipherEvpOperation::BlockCipherEvpOperation(keymaster_purpose_t purpose,
                                                  const EvpCipherDescription& cipher_description)
     : Operation(purpose, key.hw_enforced_move(), key.sw_enforced_move()), block_mode_(block_mode),
       caller_iv_(caller_iv), tag_length_(tag_length), data_started_(false), padding_(padding),
-      key_(key.key_material_move()), cipher_description_(cipher_description) {
-    EVP_CIPHER_CTX_init(&ctx_);
+      key_(key.key_material_move()), cipher_description_(cipher_description), ctx_(EVP_CIPHER_CTX_new()) {
+    EVP_CIPHER_CTX_init(ctx_);
 }
 
 BlockCipherEvpOperation::~BlockCipherEvpOperation() {
-    EVP_CIPHER_CTX_cleanup(&ctx_);
+    EVP_CIPHER_CTX_cleanup(ctx_);
+    EVP_CIPHER_CTX_free(ctx_);
 }
 
 keymaster_error_t BlockCipherEvpOperation::Begin(const AuthorizationSet& /* input_params */,
@@ -196,7 +197,7 @@ keymaster_error_t BlockCipherEvpOperation::Finish(const AuthorizationSet& additi
     }
 
     int output_written = -1;
-    if (!EVP_CipherFinal_ex(&ctx_, output->peek_write(), &output_written)) {
+    if (!EVP_CipherFinal_ex(ctx_, output->peek_write(), &output_written)) {
         if (tag_length_ > 0) return KM_ERROR_VERIFICATION_FAILED;
         char buf[128];
         ERR_error_string_n(ERR_peek_last_error(), buf, sizeof(buf));
@@ -231,14 +232,14 @@ keymaster_error_t BlockCipherEvpOperation::InitializeCipher(const KeymasterKeyBl
         cipher_description_.GetCipherInstance(key.key_material_size, block_mode_, &error);
     if (error) return error;
 
-    if (!EVP_CipherInit_ex(&ctx_, cipher, nullptr /* engine */, key.key_material, iv_.data,
+    if (!EVP_CipherInit_ex(ctx_, cipher, nullptr /* engine */, key.key_material, iv_.data,
                            evp_encrypt_mode())) {
         return TranslateLastOpenSslError();
     }
 
     switch (padding_) {
     case KM_PAD_NONE:
-        EVP_CIPHER_CTX_set_padding(&ctx_, 0 /* disable padding */);
+        EVP_CIPHER_CTX_set_padding(ctx_, 0 /* disable padding */);
         break;
     case KM_PAD_PKCS7:
         // This is the default for OpenSSL EVP cipher operations.
@@ -327,7 +328,7 @@ bool BlockCipherEvpOperation::HandleAad(const AuthorizationSet& input_params, co
 
 bool BlockCipherEvpOperation::ProcessBufferedAadBlock(keymaster_error_t* error) {
     int output_written;
-    if (EVP_CipherUpdate(&ctx_, nullptr /* out */, &output_written, aad_block_buf_.get(),
+    if (EVP_CipherUpdate(ctx_, nullptr /* out */, &output_written, aad_block_buf_.get(),
                          aad_block_buf_len_)) {
         aad_block_buf_len_ = 0;
         return true;
@@ -339,7 +340,7 @@ bool BlockCipherEvpOperation::ProcessBufferedAadBlock(keymaster_error_t* error) 
 bool BlockCipherEvpOperation::ProcessAadBlocks(const uint8_t* data, size_t blocks,
                                                keymaster_error_t* error) {
     int output_written;
-    if (EVP_CipherUpdate(&ctx_, nullptr /* out */, &output_written, data,
+    if (EVP_CipherUpdate(ctx_, nullptr /* out */, &output_written, data,
                          blocks * block_size_bytes())) {
         return true;
     }
@@ -372,7 +373,7 @@ bool BlockCipherEvpOperation::InternalUpdate(const uint8_t* input, size_t input_
     }
 
     int output_written = -1;
-    if (!EVP_CipherUpdate(&ctx_, output->peek_write(), &output_written, input, input_length)) {
+    if (!EVP_CipherUpdate(ctx_, output->peek_write(), &output_written, input, input_length)) {
         *error = TranslateLastOpenSslError();
         return false;
     }
@@ -432,7 +433,7 @@ keymaster_error_t BlockCipherEvpEncryptOperation::Finish(const AuthorizationSet&
     if (tag_length_ > 0) {
         if (!output->reserve(tag_length_)) return KM_ERROR_MEMORY_ALLOCATION_FAILED;
 
-        if (!EVP_CIPHER_CTX_ctrl(&ctx_, EVP_CTRL_GCM_GET_TAG, tag_length_, output->peek_write()))
+        if (!EVP_CIPHER_CTX_ctrl(ctx_, EVP_CTRL_GCM_GET_TAG, tag_length_, output->peek_write()))
             return TranslateLastOpenSslError();
         if (!output->advance_write(tag_length_)) return KM_ERROR_UNKNOWN_ERROR;
     }
@@ -538,7 +539,7 @@ keymaster_error_t BlockCipherEvpDecryptOperation::Finish(const AuthorizationSet&
     if (tag_buf_len_ < tag_length_) {
         return KM_ERROR_INVALID_INPUT_LENGTH;
     } else if (tag_length_ > 0 &&
-               !EVP_CIPHER_CTX_ctrl(&ctx_, EVP_CTRL_GCM_SET_TAG, tag_length_, tag_buf_.get())) {
+               !EVP_CIPHER_CTX_ctrl(ctx_, EVP_CTRL_GCM_SET_TAG, tag_length_, tag_buf_.get())) {
         return TranslateLastOpenSslError();
     }
 

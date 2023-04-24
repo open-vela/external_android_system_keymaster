@@ -385,7 +385,11 @@ SoftKeymasterContext::GenerateAttestation(const Key& key,  //
     // SoftKeymasterContext we can assume that the Key is an AsymmetricKey. So we can downcast.
     const AsymmetricKey& asymmetric_key = static_cast<const AsymmetricKey&>(key);
 
+#ifndef __NuttX__
     return generate_attestation(asymmetric_key, attest_params, {} /* attest_key */, *this, error);
+#else
+    return {};
+#endif
 }
 
 CertificateChain SoftKeymasterContext::GenerateSelfSignedCertificate(

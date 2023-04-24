@@ -240,11 +240,12 @@ RsaDigestingOperation::RsaDigestingOperation(AuthorizationSet&& hw_enforced,
                                              AuthorizationSet&& sw_enforced,
                                              keymaster_purpose_t purpose, keymaster_digest_t digest,
                                              keymaster_padding_t padding, EVP_PKEY* key)
-    : RsaOperation(move(hw_enforced), move(sw_enforced), purpose, digest, padding, key) {
-    EVP_MD_CTX_init(&digest_ctx_);
+    : RsaOperation(move(hw_enforced), move(sw_enforced), purpose, digest, padding, key), digest_ctx_(EVP_MD_CTX_new()) {
+    EVP_MD_CTX_init(digest_ctx_);
 }
 RsaDigestingOperation::~RsaDigestingOperation() {
-    EVP_MD_CTX_cleanup(&digest_ctx_);
+    EVP_MD_CTX_cleanup(digest_ctx_);
+    EVP_MD_CTX_free(digest_ctx_);
 }
 
 int RsaDigestingOperation::GetOpensslPadding(keymaster_error_t* error) {
@@ -280,7 +281,7 @@ keymaster_error_t RsaSignOperation::Begin(const AuthorizationSet& input_params,
     if (digest_ == KM_DIGEST_NONE) return KM_ERROR_OK;
 
     EVP_PKEY_CTX* pkey_ctx;
-    if (EVP_DigestSignInit(&digest_ctx_, &pkey_ctx, digest_algorithm_, nullptr /* engine */,
+    if (EVP_DigestSignInit(digest_ctx_, &pkey_ctx, digest_algorithm_, nullptr /* engine */,
                            rsa_key_) != 1)
         return TranslateLastOpenSslError();
     return SetRsaPaddingInEvpContext(pkey_ctx, true /* signing */);
@@ -294,7 +295,7 @@ keymaster_error_t RsaSignOperation::Update(const AuthorizationSet& additional_pa
         return RsaOperation::Update(additional_params, input, output_params, output,
                                     input_consumed);
 
-    if (EVP_DigestSignUpdate(&digest_ctx_, input.peek_read(), input.available_read()) != 1)
+    if (EVP_DigestSignUpdate(digest_ctx_, input.peek_read(), input.available_read()) != 1)
         return TranslateLastOpenSslError();
     *input_consumed = input.available_read();
     return KM_ERROR_OK;
@@ -372,12 +373,12 @@ keymaster_error_t RsaSignOperation::SignUndigested(Buffer* output) {
 
 keymaster_error_t RsaSignOperation::SignDigested(Buffer* output) {
     size_t siglen;
-    if (EVP_DigestSignFinal(&digest_ctx_, nullptr /* signature */, &siglen) != 1)
+    if (EVP_DigestSignFinal(digest_ctx_, nullptr /* signature */, &siglen) != 1)
         return TranslateLastOpenSslError();
 
     if (!output->Reinitialize(siglen)) return KM_ERROR_MEMORY_ALLOCATION_FAILED;
 
-    if (EVP_DigestSignFinal(&digest_ctx_, output->peek_write(), &siglen) <= 0)
+    if (EVP_DigestSignFinal(digest_ctx_, output->peek_write(), &siglen) <= 0)
         return TranslateLastOpenSslError();
     if (!output->advance_write(siglen)) return KM_ERROR_UNKNOWN_ERROR;
 
@@ -392,7 +393,7 @@ keymaster_error_t RsaVerifyOperation::Begin(const AuthorizationSet& input_params
     if (digest_ == KM_DIGEST_NONE) return KM_ERROR_OK;
 
     EVP_PKEY_CTX* pkey_ctx;
-    if (EVP_DigestVerifyInit(&digest_ctx_, &pkey_ctx, digest_algorithm_, nullptr, rsa_key_) != 1)
+    if (EVP_DigestVerifyInit(digest_ctx_, &pkey_ctx, digest_algorithm_, nullptr, rsa_key_) != 1)
         return TranslateLastOpenSslError();
     return SetRsaPaddingInEvpContext(pkey_ctx, false /* signing */);
 }
@@ -405,7 +406,7 @@ keymaster_error_t RsaVerifyOperation::Update(const AuthorizationSet& additional_
         return RsaOperation::Update(additional_params, input, output_params, output,
                                     input_consumed);
 
-    if (EVP_DigestVerifyUpdate(&digest_ctx_, input.peek_read(), input.available_read()) != 1)
+    if (EVP_DigestVerifyUpdate(digest_ctx_, input.peek_read(), input.available_read()) != 1)
         return TranslateLastOpenSslError();
     *input_consumed = input.available_read();
     return KM_ERROR_OK;
@@ -472,7 +473,7 @@ keymaster_error_t RsaVerifyOperation::VerifyUndigested(const Buffer& signature) 
 }
 
 keymaster_error_t RsaVerifyOperation::VerifyDigested(const Buffer& signature) {
-    if (!EVP_DigestVerifyFinal(&digest_ctx_, signature.peek_read(), signature.available_read()))
+    if (!EVP_DigestVerifyFinal(digest_ctx_, signature.peek_read(), signature.available_read()))
         return KM_ERROR_VERIFICATION_FAILED;
     return KM_ERROR_OK;
 }

@@ -15,6 +15,7 @@
  */
 
 #include <errno.h>
+#include <stdlib.h>
 #include <openssl/evp.h>
 #include <mbedtls/cipher.h>
 
@@ -24,10 +25,6 @@ void EVP_CIPHER_CTX_init(EVP_CIPHER_CTX* ctx) {
 
 int EVP_CIPHER_CTX_cleanup(EVP_CIPHER_CTX* ctx) {
     mbedtls_cipher_free((mbedtls_cipher_context_t*)ctx);
-    return 1;
-}
-
-int EVP_CIPHER_CTX_ctrl(EVP_CIPHER_CTX* ctx, int type, int arg, void* ptr) {
     return 1;
 }
 
@@ -135,10 +132,6 @@ int EVP_CipherFinal_ex(EVP_CIPHER_CTX* ctx, unsigned char* outm, int* outl) {
     }
     *outl = out_len;
     return 1;
-}
-
-int EVP_MD_CTX_cleanup(EVP_MD_CTX* ctx) {
-    return 0;
 }
 
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void) {

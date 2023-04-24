@@ -36,7 +36,7 @@ int RAND_bytes(unsigned char* buf, int num) {
     int ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
                                     (const unsigned char*)keymaster_personalization,
                                     strlen(keymaster_personalization)) == 0
-              && mbedtls_ctr_drbg_random(&ctr_drbg, buf, num) == 0) ? 1 : 0;
+              && mbedtls_ctr_drbg_random(&ctr_drbg, buf, num) == 0 ? 1 : 0;
     mbedtls_ctr_drbg_free(&ctr_drbg);
     mbedtls_entropy_free(&entropy);
     return ret;

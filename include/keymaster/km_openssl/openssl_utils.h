@@ -72,6 +72,7 @@ DEFINE_OPENSSL_OBJECT_POINTER(X509_NAME)
 
 typedef OpenSslObjectDeleter<BIGNUM, void, BN_free> BIGNUM_Delete;
 typedef UniquePtr<BIGNUM, BIGNUM_Delete> BIGNUM_Ptr;
+typedef OpenSslObjectDeleter<EVP_CIPHER_CTX, void, EVP_CIPHER_CTX_free> EVP_CIPHER_CTX_Delete;
 
 keymaster_error_t ec_get_group_size(const EC_GROUP* group, size_t* key_size_bits);
 EC_GROUP* ec_get_group(keymaster_ec_curve_t curve);

@@ -24,6 +24,7 @@
 #include <keymaster/authorization_set.h>
 #include <keymaster/key_blob_utils/ocb_utils.h>
 #include <keymaster/km_openssl/openssl_err.h>
+#include <keymaster/km_openssl/openssl_utils.h>
 #include <keymaster/logger.h>
 #include <keymaster/random_source.h>
 
@@ -131,7 +132,7 @@ KmErrorOr<EncryptedKey> AesGcmEncryptKey(const AuthorizationSet& hw_enforced,   
                                                          secure_deletion_data, master_key);
     if (!kek) return kek.error();
 
-    bssl::UniquePtr<EVP_CIPHER_CTX> ctx(EVP_CIPHER_CTX_new());
+    UniquePtr<EVP_CIPHER_CTX, EVP_CIPHER_CTX_Delete> ctx(EVP_CIPHER_CTX_new());
     if (!ctx) return KM_ERROR_MEMORY_ALLOCATION_FAILED;
 
     int ciphertext_len = plaintext.size();
@@ -170,7 +171,7 @@ KmErrorOr<KeymasterKeyBlob> AesGcmDecryptKey(const DeserializedKey& key,
                                      hidden, secure_deletion_data, master_key);
     if (!kek) return kek.error();
 
-    bssl::UniquePtr<EVP_CIPHER_CTX> ctx(EVP_CIPHER_CTX_new());
+    UniquePtr<EVP_CIPHER_CTX, EVP_CIPHER_CTX_Delete> ctx(EVP_CIPHER_CTX_new());
     if (!ctx) return KM_ERROR_MEMORY_ALLOCATION_FAILED;
 
     int plaintext_len = key.encrypted_key.ciphertext.size();

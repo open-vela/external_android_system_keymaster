@@ -81,7 +81,7 @@ class RsaDigestingOperation : public RsaOperation {
   protected:
     int GetOpensslPadding(keymaster_error_t* error) override;
     bool require_digest() const override { return padding_ == KM_PAD_RSA_PSS; }
-    EVP_MD_CTX digest_ctx_;
+    EVP_MD_CTX* digest_ctx_;
 };
 
 /**

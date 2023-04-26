@@ -63,4 +63,168 @@ typedef struct ecdsa_sig_st ECDSA_SIG;
 }
 #endif
 
-#endif  // KEYMASTER_OPENSSL_BASE_H
+#if defined(BORINGSSL_PREFIX)
+#define BSSL_NAMESPACE_BEGIN \
+    namespace bssl {         \
+        inline namespace BORINGSSL_PREFIX {
+#define BSSL_NAMESPACE_END \
+    }                      \
+    }
+#else
+#define BSSL_NAMESPACE_BEGIN namespace bssl {
+#define BSSL_NAMESPACE_END }
+#endif
+
+// MSVC doesn't set __cplusplus to 201103 to indicate C++11 support (see
+// https://connect.microsoft.com/VisualStudio/feedback/details/763051/a-value-of-predefined-macro-cplusplus-is-still-199711l)
+// so MSVC is just assumed to support C++11.
+#if !defined(BORINGSSL_NO_CXX) && __cplusplus < 201103L && !defined(_MSC_VER)
+#define BORINGSSL_NO_CXX
+#endif
+
+#if !defined(BORINGSSL_NO_CXX)
+
+extern "C++" {
+
+#include <memory>
+
+// STLPort, used by some Android consumers, not have std::unique_ptr.
+#if defined(_STLPORT_VERSION)
+#define BORINGSSL_NO_CXX
+#endif
+
+} // extern C++
+#endif // !BORINGSSL_NO_CXX
+
+#if defined(BORINGSSL_NO_CXX)
+
+#define BORINGSSL_MAKE_DELETER(type, deleter)
+#define BORINGSSL_MAKE_UP_REF(type, up_ref_func)
+
+#else
+
+extern "C++" {
+
+BSSL_NAMESPACE_BEGIN
+
+namespace internal {
+
+    // The Enable parameter is ignored and only exists so specializations can use
+    // SFINAE.
+    template <typename T, typename Enable = void>
+    struct DeleterImpl {
+    };
+
+    template <typename T>
+    struct Deleter {
+        void operator()(T* ptr)
+        {
+            // Rather than specialize Deleter for each type, we specialize
+            // DeleterImpl. This allows bssl::UniquePtr<T> to be used while only
+            // including base.h as long as the destructor is not emitted. This matches
+            // std::unique_ptr's behavior on forward-declared types.
+            //
+            // DeleterImpl itself is specialized in the corresponding module's header
+            // and must be included to release an object. If not included, the compiler
+            // will error that DeleterImpl<T> does not have a method Free.
+            DeleterImpl<T>::Free(ptr);
+        }
+    };
+
+    template <typename T, typename CleanupRet, void (*init)(T*),
+        CleanupRet (*cleanup)(T*)>
+    class StackAllocated {
+    public:
+        StackAllocated() { init(&ctx_); }
+        ~StackAllocated() { cleanup(&ctx_); }
+
+        StackAllocated(const StackAllocated&) = delete;
+        StackAllocated& operator=(const StackAllocated&) = delete;
+
+        T* get() { return &ctx_; }
+        const T* get() const { return &ctx_; }
+
+        T* operator->() { return &ctx_; }
+        const T* operator->() const { return &ctx_; }
+
+        void Reset()
+        {
+            cleanup(&ctx_);
+            init(&ctx_);
+        }
+
+    private:
+        T ctx_;
+    };
+
+    template <typename T, typename CleanupRet, void (*init)(T*),
+        CleanupRet (*cleanup)(T*), void (*move)(T*, T*)>
+    class StackAllocatedMovable {
+    public:
+        StackAllocatedMovable() { init(&ctx_); }
+        ~StackAllocatedMovable() { cleanup(&ctx_); }
+
+        StackAllocatedMovable(StackAllocatedMovable&& other)
+        {
+            init(&ctx_);
+            move(&ctx_, &other.ctx_);
+        }
+        StackAllocatedMovable& operator=(StackAllocatedMovable&& other)
+        {
+            move(&ctx_, &other.ctx_);
+            return *this;
+        }
+
+        T* get() { return &ctx_; }
+        const T* get() const { return &ctx_; }
+
+        T* operator->() { return &ctx_; }
+        const T* operator->() const { return &ctx_; }
+
+        void Reset()
+        {
+            cleanup(&ctx_);
+            init(&ctx_);
+        }
+
+    private:
+        T ctx_;
+    };
+
+} // namespace internal
+
+#define BORINGSSL_MAKE_DELETER(type, deleter)             \
+    namespace internal {                                  \
+        template <>                                       \
+        struct DeleterImpl<type> {                        \
+            static void Free(type* ptr) { deleter(ptr); } \
+        };                                                \
+    }
+
+// Holds ownership of heap-allocated BoringSSL structures. Sample usage:
+//   bssl::UniquePtr<RSA> rsa(RSA_new());
+//   bssl::UniquePtr<BIO> bio(BIO_new(BIO_s_mem()));
+template <typename T>
+using UniquePtr = std::unique_ptr<T, internal::Deleter<T>>;
+
+#define BORINGSSL_MAKE_UP_REF(type, up_ref_func)             \
+    inline UniquePtr<type> UpRef(type* v)                    \
+    {                                                        \
+        if (v != nullptr) {                                  \
+            up_ref_func(v);                                  \
+        }                                                    \
+        return UniquePtr<type>(v);                           \
+    }                                                        \
+                                                             \
+    inline UniquePtr<type> UpRef(const UniquePtr<type>& ptr) \
+    {                                                        \
+        return UpRef(ptr.get());                             \
+    }
+
+BSSL_NAMESPACE_END
+
+} // extern C++
+
+#endif // !BORINGSSL_NO_CXX
+
+#endif // KEYMASTER_OPENSSL_BASE_H

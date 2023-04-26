@@ -72,6 +72,19 @@ int EC_POINT_oct2point(const EC_GROUP* group, EC_POINT* point, const uint8_t* bu
 
 #ifdef __cplusplus
 }
+
+extern "C++" {
+
+BSSL_NAMESPACE_BEGIN
+
+BORINGSSL_MAKE_DELETER(EC_KEY, EC_KEY_free)
+BORINGSSL_MAKE_DELETER(EC_POINT, EC_POINT_free)
+BORINGSSL_MAKE_DELETER(EC_GROUP, EC_GROUP_free)
+
+BSSL_NAMESPACE_END
+
+}  // extern C++
+
 #endif
 
 #endif  // KEYMASTER_OPENSSL_EC_H

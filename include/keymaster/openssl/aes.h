@@ -44,6 +44,10 @@ int AES_set_decrypt_key(const uint8_t* key, unsigned bits, AES_KEY* aeskey);
 
 void AES_decrypt(const uint8_t* in, uint8_t* out, const AES_KEY* key);
 
+void AES_cbc_encrypt(const uint8_t* in, uint8_t* out, size_t len,
+                     const AES_KEY* key, uint8_t* ivec,
+                     const int enc);
+
 #ifdef __cplusplus
 }
 #endif

@@ -44,6 +44,8 @@ class AuthorizationSet;
  */
 class SoftKeymasterDevice {
   public:
+    explicit SoftKeymasterDevice();
+
     explicit SoftKeymasterDevice(KmVersion version);
 
     explicit SoftKeymasterDevice(SoftKeymasterContext* context);

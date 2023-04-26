@@ -125,6 +125,17 @@ int PKCS5_PBKDF2_HMAC(const char* password, size_t password_len, const uint8_t* 
 
 #ifdef __cplusplus
 }
+
+extern "C++" {
+BSSL_NAMESPACE_BEGIN
+
+BORINGSSL_MAKE_DELETER(EVP_PKEY, EVP_PKEY_free)
+BORINGSSL_MAKE_DELETER(EVP_PKEY_CTX, EVP_PKEY_CTX_free)
+
+BSSL_NAMESPACE_END
+
+}  // extern C++
+
 #endif
 
 #endif  // KEYMASTER_OPENSSL_EVP_H

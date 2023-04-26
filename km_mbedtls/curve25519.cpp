@@ -24,3 +24,6 @@ int X25519(uint8_t out_shared_key[32], const uint8_t private_key[32],
            const uint8_t peer_public_value[32]) {
     return 0;
 }
+
+void ED25519_keypair_from_seed(uint8_t out_public_key[32], uint8_t out_private_key[64],
+                               const uint8_t seed[32]) {}

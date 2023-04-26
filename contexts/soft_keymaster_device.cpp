@@ -157,6 +157,8 @@ static keymaster_error_t map_digests(keymaster1_device_t* dev, SoftKeymasterDevi
     return KM_ERROR_OK;
 }
 
+SoftKeymasterDevice::SoftKeymasterDevice() : SoftKeymasterDevice(KmVersion::KEYMASTER_2) {}
+
 SoftKeymasterDevice::SoftKeymasterDevice(KmVersion version)
     : wrapped_km1_device_(nullptr), context_(new (std::nothrow) SoftKeymasterContext(version)),
       impl_(new (std::nothrow) AndroidKeymaster(context_, kOperationTableSize)),

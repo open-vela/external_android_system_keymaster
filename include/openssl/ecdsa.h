@@ -56,5 +56,17 @@ int ECDSA_do_verify(const uint8_t* digest, size_t digest_len, const ECDSA_SIG* s
 
 #ifdef __cplusplus
 }
+
+extern "C++" {
+
+BSSL_NAMESPACE_BEGIN
+
+BORINGSSL_MAKE_DELETER(ECDSA_SIG, ECDSA_SIG_free)
+
+BSSL_NAMESPACE_END
+
+}  // extern C++
+
 #endif
+
 #endif  // KEYMASTER_OPENSSL_ECDSA_H

@@ -52,4 +52,18 @@ int BN_one(BIGNUM* bn);
 #ifdef __cplusplus
 }
 #endif
-#endif  // KEYMASTER_OPENSSL_BN_H
+
+#if !defined(BORINGSSL_NO_CXX)
+extern "C++" {
+
+BSSL_NAMESPACE_BEGIN
+
+BORINGSSL_MAKE_DELETER(BIGNUM, BN_free)
+
+BSSL_NAMESPACE_END
+
+} // extern C++
+
+#endif
+
+#endif // KEYMASTER_OPENSSL_BN_H

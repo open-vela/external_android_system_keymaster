@@ -57,6 +57,7 @@ typedef struct ecdsa_method_st ECDSA_METHOD;
 typedef struct BN_GENCB BN_GENCB;
 typedef struct sha256_state_st SHA256_CTX;
 typedef struct cbb_st CBB;
+typedef struct ecdsa_sig_st ECDSA_SIG;
 
 #ifdef __cplusplus
 }

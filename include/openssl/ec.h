@@ -65,6 +65,11 @@ void EC_GROUP_set_point_conversion_form(EC_GROUP* group, point_conversion_form_t
 
 void EC_GROUP_set_asn1_flag(EC_GROUP* group, int flag);
 
+EC_POINT* EC_POINT_new(const EC_GROUP* group);
+
+int EC_POINT_oct2point(const EC_GROUP* group, EC_POINT* point, const uint8_t* buf, size_t len,
+                       BN_CTX* ctx);
+
 #ifdef __cplusplus
 }
 #endif

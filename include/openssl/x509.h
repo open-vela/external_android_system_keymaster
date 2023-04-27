@@ -19,6 +19,7 @@
 
 #include <openssl/base.h>
 #include <openssl/bytestring.h>
+#include <openssl/ecdsa.h>
 #include <openssl/obj.h>
 
 #ifdef __cplusplus

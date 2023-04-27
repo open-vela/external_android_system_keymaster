@@ -70,6 +70,10 @@ void* EC_KEY_get_ex_data(const EC_KEY* r, int idx);
 
 int EC_KEY_set_public_key(EC_KEY* key, const EC_POINT* pub);
 
+EC_KEY* EC_KEY_new_by_curve_name(int nid);
+
+int EC_KEY_set_private_key(EC_KEY* key, const BIGNUM* priv);
+
 #ifdef __cplusplus
 }
 #endif

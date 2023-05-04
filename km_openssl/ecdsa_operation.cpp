@@ -61,7 +61,6 @@ const keymaster_digest_t* EcdsaOperationFactory::SupportedDigests(size_t* digest
 
 EcdsaOperation::~EcdsaOperation() {
     if (ecdsa_key_ != nullptr) EVP_PKEY_free(ecdsa_key_);
-    EVP_MD_CTX_cleanup(digest_ctx_);
     EVP_MD_CTX_free(digest_ctx_);
 }
 
@@ -198,21 +197,17 @@ keymaster_error_t Ed25519SignOperation::Finish(const AuthorizationSet& additiona
     }
 
     EVP_MD_CTX* ctx = EVP_MD_CTX_new();
-    EVP_MD_CTX_init(ctx);
     if (!EVP_DigestSignInit(ctx, /* pctx */ nullptr, /* digest */ nullptr, /* engine */ nullptr,
                             ecdsa_key_)) {
-        EVP_MD_CTX_cleanup(ctx);
         EVP_MD_CTX_free(ctx);
         return TranslateLastOpenSslError();
     }
     size_t out_len = ED25519_SIGNATURE_LEN;
     if (!EVP_DigestSign(ctx, output->peek_write(), &out_len, data_.peek_read(),
                         data_.available_read())) {
-        EVP_MD_CTX_cleanup(ctx);
         EVP_MD_CTX_free(ctx);
         return TranslateLastOpenSslError();
     }
-    EVP_MD_CTX_cleanup(ctx);
     EVP_MD_CTX_free(ctx);
     output->advance_write(out_len);
     return KM_ERROR_OK;

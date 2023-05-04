@@ -69,4 +69,5 @@ int EVP_DigestFinal_ex(EVP_MD_CTX* ctx, uint8_t* md_out, unsigned int* size) {
 
 int EVP_MD_CTX_cleanup(EVP_MD_CTX* ctx) {
     mbedtls_md_free(reinterpret_cast<mbedtls_md_context_t*>(ctx));
+    return 1;
 }

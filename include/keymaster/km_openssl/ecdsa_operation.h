@@ -34,7 +34,6 @@ class EcdsaOperation : public Operation {
                    keymaster_purpose_t purpose, keymaster_digest_t digest, EVP_PKEY* key)
         : Operation(purpose, move(hw_enforced), move(sw_enforced)), digest_(digest),
           digest_algorithm_(nullptr), ecdsa_key_(key), digest_ctx_(EVP_MD_CTX_new()) {
-        EVP_MD_CTX_init(digest_ctx_);
     }
     ~EcdsaOperation();
 

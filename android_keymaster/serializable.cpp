@@ -29,7 +29,7 @@ bool __buffer_bound_check(const uint8_t* buf, const uint8_t* end, size_t len) {
 }
 
 uint8_t* append_to_buf(uint8_t* buf, const uint8_t* end, const void* data, size_t data_len) {
-    if (__buffer_bound_check(buf, end, data_len)) {
+    if (data != nullptr && __buffer_bound_check(buf, end, data_len)) {
         memcpy(buf, data, data_len);
         return buf + data_len;
     } else {
@@ -76,8 +76,10 @@ bool Buffer::reserve(size_t size) {
         size_t new_size = buffer_size_ + size - available_write();
         uint8_t* new_buffer = new (std::nothrow) uint8_t[new_size];
         if (!new_buffer) return false;
-        memcpy(new_buffer, buffer_.get() + read_position_, available_read());
-        memset_s(buffer_.get(), 0, buffer_size_);
+        if (buffer_.get() != nullptr) {
+            memcpy(new_buffer, buffer_.get() + read_position_, available_read());
+            memset_s(buffer_.get(), 0, buffer_size_);
+        }
         buffer_.reset(new_buffer);
         buffer_size_ = new_size;
         write_position_ -= read_position_;
@@ -103,7 +105,9 @@ bool Buffer::Reinitialize(const void* data, size_t data_len) {
     buffer_.reset(new (std::nothrow) uint8_t[data_len]);
     if (!buffer_.get()) return false;
     buffer_size_ = data_len;
-    memcpy(buffer_.get(), data, data_len);
+    if (data != nullptr) {
+        memcpy(buffer_.get(), data, data_len);
+    }
     read_position_ = 0;
     write_position_ = buffer_size_;
     return true;

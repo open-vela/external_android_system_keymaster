@@ -1460,7 +1460,9 @@ keymaster_error_t SoftKeymasterDevice::finish(const keymaster2_device_t* dev,
         output->data_length = response.output.available_read();
         uint8_t* tmp = reinterpret_cast<uint8_t*>(malloc(output->data_length));
         if (!tmp) return KM_ERROR_MEMORY_ALLOCATION_FAILED;
-        memcpy(tmp, response.output.peek_read(), output->data_length);
+        if (response.output.peek_read() != nullptr) {
+            memcpy(tmp, response.output.peek_read(), output->data_length);
+        }
         output->data = tmp;
     } else if (response.output.available_read() > 0) {
         return KM_ERROR_OUTPUT_PARAMETER_NULL;

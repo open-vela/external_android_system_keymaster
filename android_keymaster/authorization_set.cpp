@@ -68,8 +68,10 @@ bool AuthorizationSet::reserve_elems(size_t count) {
             set_invalid(ALLOCATION_FAILURE);
             return false;
         }
-        memcpy(new_elems, elems_, sizeof(*elems_) * elems_size_);
-        delete[] elems_;
+        if (elems_ != nullptr) {
+            memcpy(new_elems, elems_, sizeof(*elems_) * elems_size_);
+            delete[] elems_;
+        }
         elems_ = new_elems;
         elems_capacity_ = count;
     }
@@ -85,7 +87,9 @@ bool AuthorizationSet::reserve_indirect(size_t length) {
             set_invalid(ALLOCATION_FAILURE);
             return false;
         }
-        memcpy(new_data, indirect_data_, indirect_data_size_);
+        if (indirect_data_ != nullptr) {
+            memcpy(new_data, indirect_data_, indirect_data_size_);
+        }
 
         // Fix up the data pointers to point into the new region.
         for (size_t i = 0; i < elems_size_; ++i) {

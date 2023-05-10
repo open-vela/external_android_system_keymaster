@@ -22,7 +22,9 @@
 #define LOG_TAG "TeeKeymasterDevice"
 #include <log/log.h>
 
+#ifndef KEYMASTER_FINSIH_INPUT_LENGHT_MAX
 #define KEYMASTER_FINSIH_INPUT_LENGHT_MAX 2048
+#endif
 
 namespace keymaster {
 TeeKeymasterDevice::TeeKeymasterDevice(const hw_module_t* module) {

@@ -22,8 +22,13 @@
 #include <tee_client_api.h>
 #include <keymaster/android_keymaster_messages.h>
 
+#ifndef KEYMASTER_SEND_BUF_SIZE_MAX
 #define KEYMASTER_SEND_BUF_SIZE_MAX 1 * 4096  // 4k
-#define KEYMASTER_RECE_BUF_SIZE_MAX 2 * 4096  // 8K
+#endif
+
+#ifndef KEYMASTER_RECE_BUF_SIZE_MAX
+#define KEYMASTER_RECE_BUF_SIZE_MAX 2 * 4096  // 8k
+#endif
 
 keymaster_error_t tee_keymaster_connect(TEEC_Context* context,
                                         TEEC_Session* session, TEEC_UUID* uuid);

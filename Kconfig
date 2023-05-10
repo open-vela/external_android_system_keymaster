@@ -32,6 +32,16 @@ config KEYMASTER_TEE
 	bool "Tee device"
 endchoice
 
+if KEYMASTER_TEE
+config KEYMASTER_TEE_SEND_BUF_MAX
+	int "Tee keymaster Ipc max send buffer"
+	default 1024
+
+config KEYMASTER_TEE_RECV_BUF_MAX
+	int "Tee keymaster Ipc max recv buffer"
+	default KEYMASTER_TEE_SEND_BUF_MAX
+endif
+
 config KEYMASTER_TEST
 	tristate "keymaster test"
 	depends on LIB_GOOGLETEST

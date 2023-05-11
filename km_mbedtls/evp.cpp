@@ -25,7 +25,6 @@
 
 int EVP_PKEY_id(const EVP_PKEY* pkey) {
     const mbedtls_pk_context* mbedtls_pkey = reinterpret_cast<const mbedtls_pk_context*>(pkey);
-    const mbedtls_pk_info_t* pk_info = mbedtls_pkey->pk_info;
     return mbedtls_pk_get_type(mbedtls_pkey);
 }
 

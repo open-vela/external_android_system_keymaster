@@ -381,11 +381,10 @@ SoftKeymasterContext::GenerateAttestation(const Key& key,  //
         return {};
     }
 
+#ifndef __NuttX__
     // We have established that the given key has the correct algorithm, and because this is the
     // SoftKeymasterContext we can assume that the Key is an AsymmetricKey. So we can downcast.
     const AsymmetricKey& asymmetric_key = static_cast<const AsymmetricKey&>(key);
-
-#ifndef __NuttX__
     return generate_attestation(asymmetric_key, attest_params, {} /* attest_key */, *this, error);
 #else
     return {};

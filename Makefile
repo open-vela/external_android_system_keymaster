@@ -107,6 +107,9 @@ CXXSRCS += legacy_support/keymaster1_engine.cpp
 CSRCS += key_blob_utils/ocb.c
 endif
 
+CXXFLAGS += -Wno-shadow
+CFLAGS   += -Wno-undef
+
 ifneq ($(CONFIG_KEYMASTER_TEST),)
 
 CXXFLAGS += -DKEYMASTER_NAME_TAGS

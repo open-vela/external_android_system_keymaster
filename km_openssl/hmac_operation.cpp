@@ -90,8 +90,8 @@ const keymaster_digest_t* HmacOperationFactory::SupportedDigests(size_t* digest_
 
 HmacOperation::HmacOperation(Key&& key, keymaster_purpose_t purpose, keymaster_digest_t digest,
                              size_t mac_length, size_t min_mac_length)
-    : Operation(purpose, key.hw_enforced_move(), key.sw_enforced_move()), error_(KM_ERROR_OK),
-      mac_length_(mac_length), min_mac_length_(min_mac_length), ctx_(HMAC_CTX_new()) {
+    : Operation(purpose, key.hw_enforced_move(), key.sw_enforced_move()), ctx_(HMAC_CTX_new()),
+      error_(KM_ERROR_OK), mac_length_(mac_length), min_mac_length_(min_mac_length) {
     // Initialize CTX first, so dtor won't crash even if we error out later.
     HMAC_CTX_init(ctx_);
 

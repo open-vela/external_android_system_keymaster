@@ -145,8 +145,8 @@ BlockCipherEvpOperation::BlockCipherEvpOperation(keymaster_purpose_t purpose,
                                                  size_t tag_length, Key&& key,
                                                  const EvpCipherDescription& cipher_description)
     : Operation(purpose, key.hw_enforced_move(), key.sw_enforced_move()), block_mode_(block_mode),
-      caller_iv_(caller_iv), tag_length_(tag_length), data_started_(false), padding_(padding),
-      key_(key.key_material_move()), cipher_description_(cipher_description), ctx_(EVP_CIPHER_CTX_new()) {
+      ctx_(EVP_CIPHER_CTX_new()), caller_iv_(caller_iv), tag_length_(tag_length), data_started_(false),
+      padding_(padding), key_(key.key_material_move()), cipher_description_(cipher_description) {
     EVP_CIPHER_CTX_init(ctx_);
 }
 

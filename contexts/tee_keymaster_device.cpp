@@ -122,7 +122,9 @@ keymaster_error_t TeeKeymasterDevice::configure(
 
 keymaster_error_t TeeKeymasterDevice::add_rng_entropy(const uint8_t* data,
                                                       size_t data_length) {
-    return KM_ERROR_UNIMPLEMENTED;
+    // return fake KM_ERROR_OK value
+    // TA don't support this interface yet, but keystore use it
+    return KM_ERROR_OK;
 }
 
 keymaster_error_t TeeKeymasterDevice::generate_key(

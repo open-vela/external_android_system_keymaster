@@ -91,7 +91,7 @@ uint32_t GetPatchlevel(const char* patchlevel_str, PatchlevelOutput detail) {
     uint32_t month = match_to_uint32(patchlevel_str, matches[kMonthMatch]);
 
     if (month < 1 || month > 12) {
-        ALOGE("Invalid patch month %d", month);
+        ALOGE("Invalid patch month %" PRIu32, month);
         return 0;
     }
 
@@ -99,7 +99,7 @@ uint32_t GetPatchlevel(const char* patchlevel_str, PatchlevelOutput detail) {
     case PatchlevelOutput::kYearMonthDay: {
         uint32_t day = match_to_uint32(patchlevel_str, matches[kDayMatch]);
         if (day < 1 || day > 31) {
-            ALOGE("Invalid patch day %d", day);
+            ALOGE("Invalid patch day %" PRIu32, day);
             return 0;
         }
         return year * 10000 + month * 100 + day;

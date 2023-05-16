@@ -31,7 +31,7 @@ keymaster_error_t tee_keymaster_connect(TEEC_Context* context,
     /* Initialize a context connecting us to the TEE */
     res = TEEC_InitializeContext(NULL, context);
     if (res != TEEC_SUCCESS) {
-        ALOGE("TEEC_InitializeContext failed with code 0x%08x\n", res);
+        ALOGE("TEEC_InitializeContext failed with code 0x%08" PRIx32 "\n", res);
         return translate_error(res);
     }
 
@@ -39,7 +39,7 @@ keymaster_error_t tee_keymaster_connect(TEEC_Context* context,
     res = TEEC_OpenSession(context, session, uuid, TEEC_LOGIN_PUBLIC, NULL,
                            NULL, &origin);
     if (res != TEEC_SUCCESS) {
-        ALOGE("TEEC_Opensession failed with code 0x%08x origin 0x%08x\n", res,
+        ALOGE("TEEC_Opensession failed with code 0x%08" PRIx32 " origin 0x%08" PRIx32 "\n", res,
               origin);
         return translate_error(res);
     }
@@ -96,7 +96,7 @@ keymaster_error_t tee_keymaster_send(keystore_command command,
 
     uint32_t req_size = request.SerializedSize();
     if (req_size > KEYMASTER_SEND_BUF_SIZE_MAX) {
-        ALOGE("Request too big: %u Max size: %u", req_size, KEYMASTER_SEND_BUF_SIZE_MAX);
+        ALOGE("Request too big: %" PRIu32 " Max size: %d", req_size, KEYMASTER_SEND_BUF_SIZE_MAX);
         return KM_ERROR_INVALID_INPUT_LENGTH;
     }
 
@@ -114,7 +114,7 @@ keymaster_error_t tee_keymaster_send(keystore_command command,
 
     res = TEEC_AllocateSharedMemory(context, &req_shm);
     if (res != TEEC_SUCCESS) {
-        ALOGE("[%d]TEEC_AllocateSharedMemory failed with code 0x%08x\n",
+        ALOGE("[%d]TEEC_AllocateSharedMemory failed with code 0x%08" PRIx32 "\n",
               command, res);
         goto exit;
     }
@@ -127,7 +127,7 @@ keymaster_error_t tee_keymaster_send(keystore_command command,
     rsp_shm.flags = TEEC_MEM_OUTPUT;
     res = TEEC_AllocateSharedMemory(context, &rsp_shm);
     if (res != TEEC_SUCCESS) {
-        ALOGE("[%d]TEEC_AllocateSharedMemory failed with code 0x%08x\n",
+        ALOGE("[%d]TEEC_AllocateSharedMemory failed with code 0x%08" PRIx32 "\n",
               command, res);
         goto exit_free_req_mem;
     }
@@ -144,7 +144,7 @@ keymaster_error_t tee_keymaster_send(keystore_command command,
     res = TEEC_InvokeCommand(session, command, &op, &origin);
     if (res != TEEC_SUCCESS) {
         ALOGE(
-            "[%d]TEEC_InvokeCommand failed with code 0x%08x origin 0x%08x, "
+            "[%d]TEEC_InvokeCommand failed with code 0x%08" PRIx32 " origin 0x%08" PRIx32 ", "
             "reconnect automatic.\n",
             command, res, origin);
         tee_keymaster_disconnect(context, session);

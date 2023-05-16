@@ -473,7 +473,7 @@ keymaster_error_t BlockCipherEvpDecryptOperation::Update(const AuthorizationSet&
     // Barring error, we'll consume it all.
     *input_consumed = input.available_read();
 
-    keymaster_error_t error;
+    keymaster_error_t error = KM_ERROR_UNKNOWN_ERROR;
     if (block_mode_ == KM_MODE_GCM) {
         if (!HandleAad(additional_params, input, &error)) return error;
         return ProcessAllButTagLengthBytes(input, output);
@@ -498,7 +498,7 @@ keymaster_error_t BlockCipherEvpDecryptOperation::ProcessAllButTagLengthBytes(co
 
     if (!output->reserve(to_process + block_size_bytes())) return KM_ERROR_MEMORY_ALLOCATION_FAILED;
 
-    keymaster_error_t error;
+    keymaster_error_t error = KM_ERROR_UNKNOWN_ERROR;
     if (!ProcessTagBufContentsAsData(to_process_from_tag_buf, output, &error)) return error;
 
     if (!InternalUpdate(input.peek_read(), to_process_from_input, output, &error)) return error;
@@ -533,7 +533,7 @@ keymaster_error_t BlockCipherEvpDecryptOperation::Finish(const AuthorizationSet&
                                                          const Buffer& signature,
                                                          AuthorizationSet* output_params,
                                                          Buffer* output) {
-    keymaster_error_t error;
+    keymaster_error_t error = KM_ERROR_UNKNOWN_ERROR;
     if (!UpdateForFinish(additional_params, input, output_params, output, &error)) return error;
 
     if (tag_buf_len_ < tag_length_) {

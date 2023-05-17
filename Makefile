@@ -17,6 +17,7 @@
 include $(APPDIR)/Make.defs
 
 CXXEXT = .cpp
+CXXFLAGS += -DKEYMASTER_UNIT_TEST_BUILD
 
 CXXSRCS += android_keymaster/android_keymaster_messages.cpp
 CXXSRCS += android_keymaster/android_keymaster_utils.cpp
@@ -63,7 +64,6 @@ CXXSRCS += contexts/tee_keymaster_ipc.cpp
 endif
 
 ifneq ($(CONFIG_KEYMASTER_SOFTWARE),)
-CXXFLAGS += -DKEYMASTER_UNIT_TEST_BUILD
 
 CXXSRCS += android_keymaster/android_keymaster.cpp
 CXXSRCS += android_keymaster/keymaster_enforcement.cpp

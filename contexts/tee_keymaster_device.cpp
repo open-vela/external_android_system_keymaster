@@ -423,7 +423,10 @@ static inline TeeKeymasterDevice* convert_device(
 }
 
 /* static */
-int TeeKeymasterDevice::close_device(hw_device_t* dev) { return 0; }
+int TeeKeymasterDevice::close_device(hw_device_t* dev) {
+    delete convert_device(reinterpret_cast<keymaster2_device_t*>(dev));
+    return 0;
+}
 
 /* static */
 keymaster_error_t TeeKeymasterDevice::configure(

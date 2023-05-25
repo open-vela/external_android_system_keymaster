@@ -449,7 +449,7 @@ bool AuthorizationSet::DeserializeElementsData(const uint8_t** buf_ptr, const ui
     bool alloc_size_overflow =
         __builtin_mul_overflow(elements_count, sizeof(*elems_), &elems_alloc_size);
     /* elements_size must fit in the buffer */
-    if (static_cast<ptrdiff_t>(elements_size) > end - *buf_ptr ||
+    if (elements_size > end - *buf_ptr ||
         /* The element refs must all fit within elements_size */
         elems_refs_size > elements_size ||
         /* If our pointer math would overflow, bail */

@@ -51,11 +51,11 @@ typedef struct X509_EXTENSION X509_EXTENSION;
 typedef struct X509_NAME X509_NAME;
 typedef struct BIGNUM BIGNUM;
 typedef struct HMAC_CTX HMAC_CTX;
-typedef struct SHA_CTX SHA_CTX;
 typedef struct rsa_meth_st RSA_METHOD;
 typedef struct ecdsa_method_st ECDSA_METHOD;
 typedef struct BN_GENCB BN_GENCB;
 typedef struct sha256_state_st SHA256_CTX;
+typedef struct sha_state_st SHA_CTX;
 typedef struct cbb_st CBB;
 typedef struct ecdsa_sig_st ECDSA_SIG;
 

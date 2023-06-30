@@ -34,6 +34,24 @@ extern "C" {
 
 #define SHA256_CBLOCK 64
 
+struct sha_state_st {
+  // wpa_supplicant accesses |h0|..|h4| so we must support those names
+  // for compatibility with it until it can be updated.
+  union {
+    uint32_t h[5];
+    struct {
+      uint32_t h0;
+      uint32_t h1;
+      uint32_t h2;
+      uint32_t h3;
+      uint32_t h4;
+    };
+  };
+  uint32_t Nl, Nh;
+  uint8_t data[SHA_CBLOCK];
+  unsigned num;
+};
+
 struct sha256_state_st {
     uint32_t h[8];
     uint32_t Nl, Nh;

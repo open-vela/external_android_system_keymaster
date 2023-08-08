@@ -36,6 +36,10 @@
 #include <openssl/nid.h>
 #include <openssl/sha.h>
 
+#if defined(__NuttX__)
+#include <keymaster/cppcose/ssl_base.h>
+#endif
+
 namespace cppcose {
 
 using BIGNUM_Ptr = bssl::UniquePtr<BIGNUM>;

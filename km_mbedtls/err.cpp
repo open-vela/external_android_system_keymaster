@@ -21,15 +21,6 @@
 #include <mbedtls/cipher.h>
 #include <errno.h>
 
-unsigned long ERR_peek_last_error()
-{
-    return errno;
-}
-
-void ERR_error_string_n(unsigned long e, char* buf, size_t len) {
-    mbedtls_strerror(e, buf, len);
-}
-
 namespace keymaster {
 
 keymaster_error_t TranslateLastOpenSslError(bool log_message)

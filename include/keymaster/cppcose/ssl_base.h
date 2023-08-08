@@ -14,75 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef KEYMASTER_OPENSSL_BASE_H
-#define KEYMASTER_OPENSSL_BASE_H
+#ifndef OPENSSL_SSL_BASE_H
+#define OPENSSL_SSL_BASE_H
 
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <openssl/base.h>
+#include <openssl/ecdsa.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define ASN1_BIT_STRING ASN1_STRING
-
-typedef struct EVP_CIPHER EVP_CIPHER;
-typedef struct EVP_CIPHER_CTX EVP_CIPHER_CTX;
-typedef struct ENGINE ENGINE;
-typedef struct EVP_MD EVP_MD;
-typedef struct EVP_MD_CTX EVP_MD_CTX;
-typedef struct ASN1_BIT_STRING ASN1_BIT_STRING;
-typedef struct ASN1_INTEGER ASN1_INTEGER;
-typedef struct ASN1_OBJECT ASN1_OBJECT;
-typedef struct ASN1_OCTET_STRING ASN1_OCTET_STRING;
-typedef struct ASN1_TIME ASN1_TIME;
-typedef struct BN_CTX BN_CTX;
-typedef struct EC_GROUP EC_GROUP;
-typedef struct EC_KEY EC_KEY;
-typedef struct EC_POINT EC_POINT;
-typedef struct EVP_PKEY EVP_PKEY;
-typedef struct EVP_PKEY_CTX EVP_PKEY_CTX;
-typedef struct PKCS8_PRIV_KEY_INFO PKCS8_PRIV_KEY_INFO;
-typedef struct RSA RSA;
-typedef struct X509 X509;
-typedef struct X509_ALGOR X509_ALGOR;
-typedef struct X509_EXTENSION X509_EXTENSION;
-typedef struct X509_NAME X509_NAME;
-typedef struct BIGNUM BIGNUM;
-typedef struct HMAC_CTX HMAC_CTX;
-typedef struct rsa_meth_st RSA_METHOD;
-typedef struct ecdsa_method_st ECDSA_METHOD;
-typedef struct BN_GENCB BN_GENCB;
-typedef struct sha256_state_st SHA256_CTX;
-typedef struct sha_state_st SHA_CTX;
-typedef struct cbb_st CBB;
-typedef struct ecdsa_sig_st ECDSA_SIG;
-
-#ifdef __cplusplus
-}
-#endif
-
-#if defined(BORINGSSL_PREFIX)
-#define BSSL_NAMESPACE_BEGIN \
-    namespace bssl {         \
-        inline namespace BORINGSSL_PREFIX {
-#define BSSL_NAMESPACE_END \
-    }                      \
-    }
-#else
 #define BSSL_NAMESPACE_BEGIN namespace bssl {
 #define BSSL_NAMESPACE_END }
-#endif
-
-// MSVC doesn't set __cplusplus to 201103 to indicate C++11 support (see
-// https://connect.microsoft.com/VisualStudio/feedback/details/763051/a-value-of-predefined-macro-cplusplus-is-still-199711l)
-// so MSVC is just assumed to support C++11.
-#if !defined(BORINGSSL_NO_CXX) && __cplusplus < 201103L && !defined(_MSC_VER)
-#define BORINGSSL_NO_CXX
-#endif
-
-#if !defined(BORINGSSL_NO_CXX)
 
 extern "C++" {
 
@@ -94,7 +36,6 @@ extern "C++" {
 #endif
 
 } // extern C++
-#endif // !BORINGSSL_NO_CXX
 
 #if defined(BORINGSSL_NO_CXX)
 
@@ -225,6 +166,34 @@ BSSL_NAMESPACE_END
 
 } // extern C++
 
+
+#if !defined(BORINGSSL_NO_CXX)
+extern "C++" {
+
+BSSL_NAMESPACE_BEGIN
+
+BORINGSSL_MAKE_DELETER(BIGNUM, BN_free)
+
+BORINGSSL_MAKE_DELETER(EVP_CIPHER_CTX, EVP_CIPHER_CTX_free)
+
+using ScopedEVP_CIPHER_CTX =
+    internal::StackAllocated<EVP_CIPHER_CTX, int, EVP_CIPHER_CTX_init,
+                             EVP_CIPHER_CTX_cleanup>;
+
+BORINGSSL_MAKE_DELETER(EC_KEY, EC_KEY_free)
+BORINGSSL_MAKE_DELETER(EC_POINT, EC_POINT_free)
+BORINGSSL_MAKE_DELETER(EC_GROUP, EC_GROUP_free)
+
+BORINGSSL_MAKE_DELETER(ECDSA_SIG, ECDSA_SIG_free)
+
+BORINGSSL_MAKE_DELETER(EVP_PKEY, EVP_PKEY_free)
+BORINGSSL_MAKE_DELETER(EVP_PKEY_CTX, EVP_PKEY_CTX_free)
+
+BSSL_NAMESPACE_END
+
+} // extern C++
+#endif
+
 #endif // !BORINGSSL_NO_CXX
 
-#endif // KEYMASTER_OPENSSL_BASE_H
+#endif // OPENSSL_SSL_BASE_H

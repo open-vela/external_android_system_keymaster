@@ -31,7 +31,7 @@ CXXSRCS += km_openssl/openssl_utils.cpp
 
 ifneq ($(CONFIG_KEYMASTER_TEE),)
 # TA head file
-CXXFLAGS += ${INCDIR_PREFIX}$(APPDIR)/external/kmgk/kmgk/keymaster/ta/include
+CXXFLAGS += ${INCDIR_PREFIX}$(APPDIR)/external/optee/kmgk/kmgk/keymaster/ta/include
 
 CXXFLAGS += ${DEFINE_PREFIX}KEYMASTER_SEND_BUF_SIZE_MAX=$(CONFIG_KEYMASTER_TEE_SEND_BUF_MAX)
 CXXFLAGS += ${DEFINE_PREFIX}KEYMASTER_FINSIH_INPUT_LENGHT_MAX=$(CONFIG_KEYMASTER_TEE_SEND_BUF_MAX)

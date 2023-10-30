@@ -8,3 +8,6 @@
 /tests/*_test
 /coverage.info
 /coverage/
+.built
+.depend
+Make.dep

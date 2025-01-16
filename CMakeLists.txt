@@ -100,6 +100,7 @@ if(CONFIG_ANDROID_KEYMASTER)
   endif()
 
   if(CONFIG_KEYMASTER_TEST)
+    list(APPEND FLAGS -DKEYMASTER_NAME_TAGS)
     nuttx_add_application(
       NAME
       keymaster_gtest

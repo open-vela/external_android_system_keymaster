@@ -549,7 +549,7 @@ struct AbortOperationRequest : public KeymasterMessage {
         return copy_uint64_from_buf(buf_ptr, end, &op_handle);
     }
 
-    keymaster_operation_handle_t op_handle;
+    keymaster_operation_handle_t op_handle{0};
 };
 
 using AbortOperationResponse = EmptyKeymasterResponse;

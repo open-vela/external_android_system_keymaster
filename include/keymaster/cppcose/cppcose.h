@@ -130,7 +130,7 @@ template <typename T> class ErrMsgOr {
 
   private:
     std::string errMsg_;
-    std::optional<T> value_;
+    std::optional<T> value_{std::in_place};
 };
 
 class CoseKey {
